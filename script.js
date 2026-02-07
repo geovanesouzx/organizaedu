@@ -345,8 +345,8 @@ window.loadChatMessages = function() {
                     <i data-lucide="sparkles" class="w-4 h-4"></i>
                 </div>
                 <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
-                    Olá! Eu sou a <strong>Organiza IA</strong>. 🧠<br><br>
-                    Estou pronta para ajudar nos seus estudos!
+                    Olá! Eu sou a <strong>OrganizaEdu</strong>. 🧠<br><br>
+                    Estou conectada ao seu perfil. Posso ajudar com suas tarefas, notas, grade e muito mais!
                 </div>
             </div>`;
 
@@ -384,6 +384,17 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
+        // Coleta o contexto do usuário para enviar à IA
+        const userContext = {
+            profile: userProfileData,
+            schedule: scheduleData,
+            tasks: tasksData,
+            finance: financeData,
+            notes: notesData,
+            currentTime: new Date().toLocaleString('pt-BR'),
+            currentBudget: monthlyBudget
+        };
+
         try {
             // Requisição para a API na Vercel (Deve ser /api/chat)
             const response = await fetch('/api/chat', {
@@ -392,7 +403,8 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
                 body: JSON.stringify({
                     provider: currentAIProvider,
                     message: msgText,
-                    history: [] 
+                    history: [], // Poderia passar histórico limitado se necessário
+                    context: userContext // Envia os dados para a IA
                 })
             });
 
@@ -400,9 +412,8 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 const text = await response.text();
-                // Se o texto começar com <, é HTML (erro da Vercel)
                 if (text.trim().startsWith('<')) {
-                    throw new Error("API não encontrada (404). Verifique se o arquivo api/chat.js foi enviado para o GitHub.");
+                    throw new Error("API não encontrada (404). Verifique se o arquivo api/chat.js foi enviado.");
                 }
                 throw new Error("Resposta inválida do servidor.");
             }
