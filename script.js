@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// FIREBASE CONFIG (Usando as chaves fornecidas)
+// FIREBASE CONFIG
 const firebaseConfig = {
     apiKey: "AIzaSyA3g9gmFn-Uc_SoLHsVhH7eIwgzMOYmIAQ",
     authDomain: "organizaedu.firebaseapp.com",
@@ -19,60 +19,72 @@ const db = getFirestore(app);
 let currentUser = null;
 const appId = "organiza_edu_v1"; 
 
-// --- AUTH & LOADING STATE ---
-onAuthStateChanged(auth, (user) => {
+// --- AUTH & SETUP FLOW ---
+onAuthStateChanged(auth, async (user) => {
     const loadingScreen = document.getElementById('loading-screen');
     const loginScreen = document.getElementById('login-screen');
+    const setupScreen = document.getElementById('setup-screen');
     const appContent = document.getElementById('app-content');
 
     if (user) {
         currentUser = user;
         console.log("Usuário logado:", user.email);
         
-        // Inicializa dados
-        initDataSync();
-        loadChatMessages();
+        // Verifica se o usuário já tem perfil configurado
+        const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'profile');
+        const profileSnap = await getDoc(profileRef);
 
-        // UI Transition
-        setTimeout(() => {
+        if (profileSnap.exists() && profileSnap.data().username) {
+            // PERFIL EXISTE -> VAI PRO APP
+            initDataSync();
+            loadChatMessages();
+            
+            // Transição UI
             loadingScreen.style.opacity = '0';
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
                 loginScreen.classList.add('hidden');
+                setupScreen.classList.add('hidden');
                 appContent.classList.remove('hidden');
                 setTimeout(() => appContent.style.opacity = '1', 10);
             }, 500);
-        }, 1500); // Fake loading delay for beauty
+        } else {
+            // PERFIL NÃO EXISTE -> VAI PRA TELA DE SETUP
+            // Preenche o nome/foto do Google se existir
+            document.getElementById('setup-name').value = user.displayName || "";
+            if(user.photoURL) document.getElementById('setup-profile-preview').src = user.photoURL;
 
-    } else {
-        currentUser = null;
-        console.log("Nenhum usuário logado.");
-        
-        // UI Transition
-        setTimeout(() => {
             loadingScreen.style.opacity = '0';
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
-                appContent.classList.add('hidden');
-                loginScreen.classList.remove('hidden');
+                loginScreen.classList.add('hidden');
+                setupScreen.classList.remove('hidden');
             }, 500);
-        }, 1000);
+        }
+
+    } else {
+        currentUser = null;
+        // Transição para Login
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            appContent.classList.add('hidden');
+            setupScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        }, 500);
     }
 });
 
-// Listener do botão de login (precisa ser adicionado após o DOM estar pronto)
+// Listener do botão de login
 document.addEventListener('DOMContentLoaded', () => {
     const btnLogin = document.getElementById('btn-login-google');
     if(btnLogin) {
         btnLogin.addEventListener('click', () => {
              const provider = new GoogleAuthProvider();
-             signInWithPopup(auth, provider)
-                .then((result) => {
-                    // Login bem sucedido
-                }).catch((error) => {
-                    console.error(error);
-                    alert("Erro ao fazer login: " + error.message);
-                });
+             signInWithPopup(auth, provider).catch((error) => {
+                console.error(error);
+                alert("Erro ao fazer login: " + error.message);
+            });
         });
     }
 });
@@ -82,6 +94,80 @@ window.logout = function() {
         window.location.reload();
     }).catch((error) => console.error(error));
 }
+
+// --- SETUP SCREEN LOGIC ---
+window.uploadToCatboxSetup = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const status = document.getElementById('setup-upload-status');
+    status.innerText = "Enviando imagem...";
+    status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
+
+    // PROXY REAL PARA POST (Usando corsproxy.io)
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
+
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', '307daba6918600198381c9952'); 
+    formData.append('fileToUpload', file);
+
+    try {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const url = await response.text();
+            if(url.startsWith('http')) {
+                document.getElementById('setup-profile-preview').src = url;
+                status.innerText = "Imagem carregada com sucesso!";
+                status.className = "text-xs text-green-500 mt-1 font-bold";
+                window.tempSetupAvatarUrl = url;
+            } else {
+                throw new Error("Resposta inválida do servidor");
+            }
+        } else {
+            throw new Error('Falha no upload');
+        }
+    } catch (error) {
+        console.error(error);
+        status.innerText = "Erro no upload. Tente novamente.";
+        status.className = "text-xs text-red-500 mt-1 font-bold";
+        // Fallback visual temporário
+        const localUrl = URL.createObjectURL(file);
+        document.getElementById('setup-profile-preview').src = localUrl;
+        window.tempSetupAvatarUrl = localUrl;
+    }
+};
+
+window.finishSetup = async () => {
+    const name = document.getElementById('setup-name').value;
+    const username = document.getElementById('setup-username').value;
+    const course = document.getElementById('setup-course').value;
+    const semester = document.getElementById('setup-semester').value;
+    
+    // Usa a URL do upload ou a foto do google ou o placeholder
+    let avatarUrl = window.tempSetupAvatarUrl || document.getElementById('setup-profile-preview').src;
+
+    if(!name || !username) return alert("Por favor, preencha seu nome e escolha um usuário.");
+
+    if(currentUser) {
+        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), {
+            name,
+            username,
+            course: course || "Curso não informado",
+            semester,
+            avatarUrl: avatarUrl,
+            joinedAt: Date.now()
+        }, { merge: true });
+
+        // Recarrega a página para acionar o fluxo normal
+        window.location.reload();
+    }
+};
 
 // SYNC AGORA TUDO DO FIRESTORE
 function initDataSync() {
@@ -98,17 +184,14 @@ function initDataSync() {
             // Prioridade: Salvo > Google Photo > UI Avatar
             let avatarUrl = data.avatarUrl || currentUser.photoURL || `https://ui-avatars.com/api/?name=${data.name || 'User'}&background=6366f1&color=fff&bold=true`;
             
-            document.getElementById('profile-img').src = avatarUrl;
-            document.getElementById('header-img').src = avatarUrl;
-            document.getElementById('edit-profile-preview').src = avatarUrl;
-        } else {
-            // Se não tiver perfil, usa dados do Google
-            const googlePhoto = currentUser.photoURL;
-            if(googlePhoto) {
-                 document.getElementById('profile-img').src = googlePhoto;
-                 document.getElementById('header-img').src = googlePhoto;
-            }
-            document.getElementById('profile-name').innerText = currentUser.displayName || "Estudante";
+            // Atualiza TODAS as imagens de perfil na interface
+            const profileImg = document.getElementById('profile-img');
+            const headerImg = document.getElementById('header-img');
+            const editPreview = document.getElementById('edit-profile-preview');
+            
+            if(profileImg) profileImg.src = avatarUrl;
+            if(headerImg) headerImg.src = avatarUrl;
+            if(editPreview) editPreview.src = avatarUrl;
         }
     });
 
@@ -313,7 +396,11 @@ window.uploadChatImage = async (input) => {
 
         if (response.ok) {
             const url = await response.text();
-            await sendMessage(url, 'image'); // Envia como mensagem do tipo imagem
+            if(url.startsWith('http')) {
+                await sendMessage(url, 'image'); 
+            } else {
+                throw new Error("URL inválida");
+            }
         } else {
             alert('Falha no upload da imagem.');
         }
@@ -368,10 +455,14 @@ window.uploadToCatbox = async (input) => {
 
         if (response.ok) {
             const url = await response.text();
-            document.getElementById('edit-profile-preview').src = url;
-            status.innerText = "Upload concluído!";
-            status.className = "text-xs text-green-500 mt-1 font-bold";
-            window.tempAvatarUrl = url;
+            if(url.startsWith('http')) {
+                document.getElementById('edit-profile-preview').src = url;
+                status.innerText = "Upload concluído!";
+                status.className = "text-xs text-green-500 mt-1 font-bold";
+                window.tempAvatarUrl = url;
+            } else {
+                throw new Error("URL inválida retornada");
+            }
         } else {
             throw new Error('Falha no upload');
         }
@@ -379,6 +470,10 @@ window.uploadToCatbox = async (input) => {
         console.error(error);
         status.innerText = "Erro no upload (Tente novamente).";
         status.className = "text-xs text-red-500 mt-1 font-bold";
+        // Fallback visual para não travar o usuário
+        const local = URL.createObjectURL(file);
+        document.getElementById('edit-profile-preview').src = local;
+        window.tempAvatarUrl = local;
     }
 };
 
