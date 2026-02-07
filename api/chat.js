@@ -22,7 +22,6 @@ export default async function handler(req, res) {
         let result = {};
 
         // --- SISTEMA DE TOOLS (AÇÕES) ---
-        // Instrução para a IA retornar JSON quando precisar agir
         const toolsInstruction = `
             FERRAMENTAS DISPONÍVEIS:
             Para executar uma ação, responda APENAS um JSON no seguinte formato (sem markdown):
@@ -42,18 +41,19 @@ export default async function handler(req, res) {
             3. create_task (Criar Tarefa)
                - data: { text (obrigatório), category (estudo, prova, trabalho, pessoal), date (YYYY-MM-DDTHH:MM) }
             4. delete_task (Excluir Tarefa)
-               - data: { id }
+               - data: { id (se souber) ou texto da tarefa }
             5. create_transaction (Adicionar Gasto)
                - data: { desc, val }
 
-            Se não for ação, responda apenas o texto normalmente (JSON com campo "response" ou texto puro).
+            REGRAS DE RESPOSTA:
+            - Se o usuário pedir para criar algo, USE O JSON.
+            - Se for apenas conversa, responda com JSON contendo apenas o campo "response".
+            - NUNCA repita o prompt do usuário.
+            - Identidade: OrganizaEdu.
         `;
 
         const systemProfile = `
             Você é a OrganizaEdu, assistente pessoal integrada.
-            Identidade: OrganizaEdu (nunca Llama/GPT).
-            Tom: Prestativa, Otimista.
-            
             DADOS ATUAIS DO USUÁRIO:
             ${JSON.stringify(context)}
         `;
@@ -78,8 +78,8 @@ export default async function handler(req, res) {
                     contents: contents,
                     systemInstruction: { parts: [{ text: fullSystemPrompt }] },
                     generationConfig: { 
-                        temperature: 0.4, // Menor temperatura para seguir instruções JSON
-                        responseMimeType: "application/json" // Força JSON no Gemini
+                        temperature: 0.4, 
+                        responseMimeType: "application/json" 
                     }
                 })
             });
@@ -91,13 +91,11 @@ export default async function handler(req, res) {
             try {
                 result = JSON.parse(rawText);
             } catch (e) {
-                // Se não vier JSON válido, assume que é texto
                 result = { response: rawText };
             }
 
         // --- GROQ (LLAMA) ---
         } else {
-            // ... (implementação similar para Groq se necessário, focando no Gemini agora)
              if (!GROQ_KEY) throw new Error("Chave API Groq não configurada.");
              const url = "https://api.groq.com/openai/v1/chat/completions";
              

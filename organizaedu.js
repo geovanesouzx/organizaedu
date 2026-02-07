@@ -3,7 +3,7 @@ export class OrganizaIA {
         this.callbacks = callbacks; // Funções do script.js que a IA pode chamar
     }
 
-    // Formata o texto para ficar bonito no chat (Markdown simples)
+    // Formata o texto para HTML (Markdown simples)
     formatResponse(text) {
         if (!text) return "";
         let formatted = text
@@ -22,18 +22,36 @@ export class OrganizaIA {
                     provider: provider,
                     message: userText,
                     context: contextData,
-                    history: [] // Pode expandir depois
+                    history: [] 
                 })
             });
 
+            // Se der erro 429 ou 500, tratamos como texto
+            if (!response.ok) {
+                const errText = await response.text();
+                try {
+                    const errJson = JSON.parse(errText);
+                    return { text: `Erro da IA: ${errJson.error || 'Desconhecido'}` };
+                } catch (e) {
+                    return { text: "A IA está sobrecarregada ou indisponível no momento. Tente novamente em alguns segundos." };
+                }
+            }
+
             const data = await response.json();
             
-            // Verifica se a IA mandou executar uma ação
+            // Verifica se a IA mandou executar uma ação (JSON estruturado)
             if (data.action) {
                 console.log("IA solicitou ação:", data.action);
                 await this.executeAction(data.action);
+                
+                // Se a IA também mandou uma resposta de texto junto com a ação
+                if (data.response) {
+                    return { text: this.formatResponse(data.response) };
+                }
+                return { text: "Feito! ✅" };
             }
 
+            // Se for resposta normal de texto
             return {
                 text: this.formatResponse(data.response || data.text),
                 raw: data
@@ -41,7 +59,7 @@ export class OrganizaIA {
 
         } catch (error) {
             console.error("Erro na OrganizaIA:", error);
-            return { text: "Desculpe, tive um erro de conexão. Tente novamente." };
+            return { text: "Tive um problema de conexão. Verifique sua internet." };
         }
     }
 
