@@ -19,6 +19,9 @@ const db = getFirestore(app);
 let currentUser = null;
 const appId = "organiza_edu_v1"; 
 
+// Variável global para armazenar dados do perfil em memória
+let userProfileData = null;
+
 // --- IMGUR UPLOAD FUNCTION ---
 async function uploadToImgur(file) {
     const clientId = "513bb727cecf9ac"; // Client ID fornecido
@@ -78,7 +81,6 @@ onAuthStateChanged(auth, async (user) => {
             }, 500);
         } else {
             // PERFIL NÃO EXISTE -> VAI PRA TELA DE SETUP
-            // Preenche o nome/foto do Google se existir
             document.getElementById('setup-name').value = user.displayName || "";
             if(user.photoURL) document.getElementById('setup-profile-preview').src = user.photoURL;
 
@@ -142,7 +144,6 @@ window.uploadToImgurSetup = async (input) => {
         console.error(error);
         status.innerText = "Erro no upload. Tente novamente.";
         status.className = "text-xs text-red-500 mt-1 font-bold";
-        // Fallback visual temporário
         const localUrl = URL.createObjectURL(file);
         document.getElementById('setup-profile-preview').src = localUrl;
         window.tempSetupAvatarUrl = localUrl;
@@ -155,7 +156,6 @@ window.finishSetup = async () => {
     const course = document.getElementById('setup-course').value;
     const semester = document.getElementById('setup-semester').value;
     
-    // Usa a URL do upload ou a foto do google ou o placeholder
     let avatarUrl = window.tempSetupAvatarUrl || document.getElementById('setup-profile-preview').src;
 
     if(!name || !username) return alert("Por favor, preencha seu nome e escolha um usuário.");
@@ -170,7 +170,6 @@ window.finishSetup = async () => {
             joinedAt: Date.now()
         }, { merge: true });
 
-        // Recarrega a página para acionar o fluxo normal
         window.location.reload();
     }
 };
@@ -183,14 +182,14 @@ function initDataSync() {
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), (doc) => {
         if (doc.exists()) {
             const data = doc.data();
+            userProfileData = data; // Salva em variável global
+
             if(data.name) document.getElementById('profile-name').innerText = data.name;
             if(data.username) document.getElementById('profile-username').innerText = '@' + data.username;
             if(data.course && data.semester) document.getElementById('profile-course').innerText = `${data.course} • ${data.semester}`;
             
-            // Prioridade: Salvo > Google Photo > UI Avatar
             let avatarUrl = data.avatarUrl || currentUser.photoURL || `https://ui-avatars.com/api/?name=${data.name || 'User'}&background=6366f1&color=fff&bold=true`;
             
-            // Atualiza TODAS as imagens de perfil na interface
             const profileImg = document.getElementById('profile-img');
             const headerImg = document.getElementById('header-img');
             const editPreview = document.getElementById('edit-profile-preview');
@@ -201,7 +200,7 @@ function initDataSync() {
         }
     });
 
-    // 2. Settings (Grade, Tasks, Finance, Widget Style, GradesData, Budget, Notes)
+    // 2. Settings (Grade, Tasks, Finance, Notes, etc.)
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'settings'), (doc) => {
         if(doc.exists()) {
             const data = doc.data();
@@ -217,12 +216,18 @@ function initDataSync() {
             if (window.updateNextClassWidget) window.updateNextClassWidget();
             if (window.renderTasks) window.renderTasks();
             if (window.renderFinance) window.renderFinance();
-            if (window.renderNotes && document.getElementById('view-notas') && !document.getElementById('view-notas').classList.contains('hidden')) window.renderNotes();
+            
+            // CORREÇÃO DO BUG DO TECLADO:
+            // Só renderiza as notas se NÃO estiver editando uma nota (activeNoteId == null)
+            // Se estiver editando, o DOM já está atualizado pelo input do usuário e o Firestore apenas salva em background.
+            if (window.renderNotes && !activeNoteId && document.getElementById('view-notas') && !document.getElementById('view-notas').classList.contains('hidden')) {
+                window.renderNotes();
+            }
         } 
     });
 }
 
-// --- SISTEMA DE NAVEGAÇÃO NATIVO (HISTORY API) ---
+// --- SISTEMA DE NAVEGAÇÃO ---
 function switchView(pageId) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + pageId);
@@ -240,12 +245,11 @@ function switchView(pageId) {
         backBtn.classList.remove('hidden');
     }
 
-    // Lógica para esconder a barra de navegação no Chat IA
     const mobileNav = document.querySelector('.glass-nav');
     if (pageId === 'ia') {
-        mobileNav.classList.add('hidden-nav'); // Esconde a barra
+        mobileNav.classList.add('hidden-nav');
     } else {
-        mobileNav.classList.remove('hidden-nav'); // Mostra a barra
+        mobileNav.classList.remove('hidden-nav');
     }
 
     document.querySelectorAll('.mobile-nav-item').forEach(btn => {
@@ -259,7 +263,11 @@ function switchView(pageId) {
     const btn = document.getElementById('mob-nav-' + navId);
     if(btn && navId !== 'ia') { btn.classList.remove('text-gray-400'); btn.classList.add('text-indigo-600', 'dark:text-indigo-400'); }
     
-    if (pageId === 'notas' && window.renderNotes) window.renderNotes();
+    // Se abrir a página de notas, renderiza a lista
+    if (pageId === 'notas') {
+        activeNoteId = null; // Reseta para a lista ao abrir a aba
+        window.renderNotes();
+    }
     
     lucide.createIcons();
 }
@@ -274,18 +282,13 @@ window.addEventListener('popstate', (event) => {
     switchView(page);
 });
 
-// --- CHAT SYSTEM (COM IMGUR & FIRESTORE) ---
+// --- CHAT SYSTEM ---
 window.loadChatMessages = function() {
     if(!currentUser) return;
-    
-    // Escuta mensagens em tempo real
     const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), orderBy('timestamp', 'asc'), limit(50));
-    
     onSnapshot(q, (snapshot) => {
         const chatContainer = document.getElementById('chat-messages');
-        chatContainer.innerHTML = ''; // Limpa e redesenha (poderia ser otimizado, mas ok para MVP)
-        
-        // Mensagem de boas vindas padrão
+        chatContainer.innerHTML = ''; 
         chatContainer.innerHTML += `
             <div class="flex gap-3 max-w-[90%] animate-message-pop">
                 <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
@@ -297,12 +300,10 @@ window.loadChatMessages = function() {
                 </div>
            </div>
         `;
-
         snapshot.forEach((doc) => {
             const msg = doc.data();
             renderMessage(msg, chatContainer);
         });
-
         lucide.createIcons();
         chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
     });
@@ -311,10 +312,7 @@ window.loadChatMessages = function() {
 function renderMessage(msg, container) {
     if (msg.role === 'user') {
         let content = msg.text;
-        if(msg.type === 'image') {
-            content = `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">`;
-        }
-        
+        if(msg.type === 'image') content = `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">`;
         container.innerHTML += `
             <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end">
                 <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">
@@ -343,23 +341,15 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     const input = document.getElementById('chat-input');
     const msgText = textOverride || input.value.trim();
     if (!msgText) return;
-
     if (!textOverride) input.value = '';
 
     if(currentUser) {
-        // Salva no Firestore (o onSnapshot vai desenhar na tela)
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-            text: msgText,
-            role: 'user',
-            type: type,
-            timestamp: Date.now()
+            text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
-
-        // Simula resposta da IA (Mock)
         setTimeout(async () => {
              let response = "Desculpe, ainda estou aprendendo.";
              const lowerMsg = msgText.toLowerCase();
-             
              if (type === 'image') response = "Recebi sua imagem! Ainda não consigo enxergar, mas guardei aqui.";
              else if (lowerMsg.includes('olá') || lowerMsg.includes('oi')) response = `Olá! Como posso ajudar você hoje?`;
              else if (lowerMsg.includes('ônibus') || lowerMsg.includes('circular')) response = `O próximo circular deve sair em breve. Verifique a aba **Circular** para horários exatos!`;
@@ -368,23 +358,17 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
              else response = "Entendi. Vou anotar isso para você.";
 
              await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: response,
-                role: 'ai',
-                type: 'text',
-                timestamp: Date.now() + 100 // Garante que vem depois
+                text: response, role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }, 1000);
     }
 }
 
-// UPLOAD PARA O CHAT COM IMGUR
 window.uploadChatImage = async (input) => {
     const file = input.files[0];
     if (!file) return;
-
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
-
     try {
         const url = await uploadToImgur(file);
         await sendMessage(url, 'image'); 
@@ -393,36 +377,38 @@ window.uploadChatImage = async (input) => {
         alert('Erro no upload da imagem.');
     } finally {
         status.classList.add('hidden');
-        input.value = ''; // Reset input
+        input.value = '';
     }
 };
 
-// --- EDITAR PERFIL & IMGUR UPLOAD (PERFIL) ---
+// --- EDITAR PERFIL (CORRIGIDO PARA CARREGAR DADOS SALVOS) ---
 window.openEditProfileView = () => {
-    const currentName = document.getElementById('profile-name').innerText;
-    const currentUsername = document.getElementById('profile-username').innerText.replace('@', '');
-    const currentDesc = document.getElementById('profile-course').innerText.split(' • ');
-    const currentImg = document.getElementById('profile-img').src;
+    // Tenta usar os dados globais carregados do Firestore, se não, usa o DOM como fallback
+    const data = userProfileData || {};
+    
+    // Valores padrão ou do DOM se o objeto estiver vazio
+    const currentName = data.name || document.getElementById('profile-name').innerText;
+    const currentUsername = data.username || document.getElementById('profile-username').innerText.replace('@', '');
+    const currentCourse = data.course || "Curso não informado";
+    const currentSemester = data.semester || "1º Semestre";
+    const currentImg = data.avatarUrl || document.getElementById('profile-img').src;
     
     document.getElementById('edit-name').value = currentName;
     document.getElementById('edit-username').value = currentUsername !== '@estudante' ? currentUsername : '';
-    document.getElementById('edit-course').value = currentDesc[0] !== 'Curso não informado' ? currentDesc[0] : '';
-    document.getElementById('edit-semester').value = currentDesc[1] !== '1º Semestre' ? currentDesc[1] : '';
+    document.getElementById('edit-course').value = currentCourse;
+    document.getElementById('edit-semester').value = currentSemester;
     document.getElementById('edit-profile-preview').src = currentImg;
 
     navigateTo('edit-profile');
 }
 window.editProfile = window.openEditProfileView;
 
-// UPLOAD IMGUR (PERFIL)
 window.uploadToImgur = async (input) => {
     const file = input.files[0];
     if (!file) return;
-
     const status = document.getElementById('upload-status');
     status.innerText = "Enviando...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
-
     try {
         const url = await uploadToImgur(file);
         document.getElementById('edit-profile-preview').src = url;
@@ -433,7 +419,6 @@ window.uploadToImgur = async (input) => {
         console.error(error);
         status.innerText = "Erro no upload (Tente novamente).";
         status.className = "text-xs text-red-500 mt-1 font-bold";
-        // Fallback visual para não travar o usuário
         const local = URL.createObjectURL(file);
         document.getElementById('edit-profile-preview').src = local;
         window.tempAvatarUrl = local;
@@ -448,10 +433,10 @@ window.saveProfileChanges = async () => {
 
     if(!name || !username) return alert("Nome e Usuário são obrigatórios.");
 
-    // Usa URL do Imgur se houver, senão mantém a atual ou gera nova
     let currentSrc = document.getElementById('edit-profile-preview').src;
     let avatarUrl = window.tempAvatarUrl || currentSrc;
     
+    // Atualização Otimista
     document.getElementById('profile-name').innerText = name;
     document.getElementById('profile-username').innerText = '@' + username;
     document.getElementById('profile-course').innerText = `${course || "Curso não informado"} • ${semester || "1º Semestre"}`;
@@ -459,13 +444,9 @@ window.saveProfileChanges = async () => {
     document.getElementById('header-img').src = avatarUrl;
 
     if (currentUser) {
-        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), { 
-            name, 
-            username,
-            course: course || "Curso não informado",
-            semester: semester || "1º Semestre",
-            avatarUrl: avatarUrl
-        }, { merge: true });
+        const newData = { name, username, course, semester, avatarUrl };
+        userProfileData = { ...userProfileData, ...newData }; // Atualiza localmente
+        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), newData, { merge: true });
         window.history.back(); 
     }
 };
@@ -508,10 +489,8 @@ async function saveData() {
             notes: notesData
         }, { merge: true });
     }
-    if (window.renderSchedule) window.renderSchedule();
-    if (window.updateNextClassWidget) window.updateNextClassWidget();
-    if (window.renderTasks) window.renderTasks();
-    if (window.renderFinance) window.renderFinance();
+    // OBS: Removemos chamadas de renderização aqui que causavam o bug do teclado
+    // A renderização deve ser reativa ao input ou ao snapshot, nunca forçada no save durante a digitação.
 }
 
 window.setWidgetStyle = function(style, save = true) {
@@ -525,22 +504,63 @@ window.setWidgetStyle = function(style, save = true) {
     if (window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
-// --- SISTEMA DE NOTAS ---
+// --- SISTEMA DE NOTAS 2.0 (INTERFACE PREMIUM & CORREÇÃO DE BUG) ---
+const noteColors = {
+    yellow: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100',
+    green: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
+    blue: 'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100',
+    purple: 'bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-100',
+    pink: 'bg-pink-100 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800 text-pink-900 dark:text-pink-100',
+    gray: 'bg-white/40 dark:bg-white/10 border-white/20 dark:border-white/10 text-gray-800 dark:text-white'
+};
+
 window.renderNotes = function() {
     const container = document.getElementById('view-notas');
     if(!container) return;
     
+    // MODO EDITOR (Detalhes da Nota)
     if(activeNoteId) {
         const note = notesData.find(n => n.id === activeNoteId);
         if(note) {
+            // Se não tiver cor, define padrão
+            const currentColor = note.color || 'gray';
+            const colorClass = noteColors[currentColor].split(' ')[0]; // Pega só o bg para o header
+
             container.innerHTML = `
-                <div class="glass-panel p-6 rounded-[2rem] h-full flex flex-col relative animate-fade-in">
-                    <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200/50 dark:border-white/10">
-                        <button onclick="closeNote()" class="p-2 rounded-xl hover:bg-white/40 dark:hover:bg-white/10 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
-                        <input type="text" id="note-title-input" value="${note.title}" placeholder="Título da Nota" class="flex-1 bg-transparent text-xl font-bold outline-none placeholder-gray-400 dark:text-white" oninput="updateNoteTitle('${note.id}', this.value)">
-                        <span class="text-xs text-gray-400" id="save-status">Salvo</span>
+                <div class="flex flex-col h-[calc(100vh-6rem)] animate-fade-in">
+                    <div class="glass-panel p-4 rounded-[1.5rem] flex-1 flex flex-col relative shadow-xl overflow-hidden transition-colors duration-500">
+                        
+                        <!-- Toolbar -->
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200/30 dark:border-white/10">
+                            <button onclick="closeNote()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="togglePinNote('${note.id}')" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition ${note.pinned ? 'text-amber-500' : 'text-gray-400'}">
+                                    <i data-lucide="pin" class="w-5 h-5 ${note.pinned ? 'fill-current' : ''}"></i>
+                                </button>
+                                <div class="relative group">
+                                    <button class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition"><i data-lucide="palette" class="w-5 h-5"></i></button>
+                                    <div class="absolute right-0 top-10 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-xl flex gap-1 hidden group-hover:flex z-50 border border-gray-200 dark:border-gray-700">
+                                        <div onclick="setNoteColor('${note.id}', 'yellow')" class="w-6 h-6 rounded-full bg-yellow-200 cursor-pointer border border-gray-300"></div>
+                                        <div onclick="setNoteColor('${note.id}', 'green')" class="w-6 h-6 rounded-full bg-green-200 cursor-pointer border border-gray-300"></div>
+                                        <div onclick="setNoteColor('${note.id}', 'blue')" class="w-6 h-6 rounded-full bg-blue-200 cursor-pointer border border-gray-300"></div>
+                                        <div onclick="setNoteColor('${note.id}', 'purple')" class="w-6 h-6 rounded-full bg-purple-200 cursor-pointer border border-gray-300"></div>
+                                        <div onclick="setNoteColor('${note.id}', 'pink')" class="w-6 h-6 rounded-full bg-pink-200 cursor-pointer border border-gray-300"></div>
+                                        <div onclick="setNoteColor('${note.id}', 'gray')" class="w-6 h-6 rounded-full bg-gray-200 cursor-pointer border border-gray-300"></div>
+                                    </div>
+                                </div>
+                                <button onclick="deleteNote('${note.id}')" class="p-2 rounded-full hover:bg-red-500/10 text-red-500 transition"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Editor -->
+                        <input type="text" id="note-title-input" value="${note.title}" placeholder="Título da Nota" class="w-full bg-transparent text-2xl font-black outline-none placeholder-gray-400 dark:text-white mb-2" oninput="updateNoteTitle('${note.id}', this.value)">
+                        <span class="text-[10px] text-gray-400 font-medium mb-4 flex items-center gap-1">
+                            ${new Date(note.updatedAt).toLocaleString('pt-BR')} 
+                            <span id="save-status" class="opacity-0 transition-opacity text-green-500">• Salvo</span>
+                        </span>
+                        <textarea id="note-content-input" class="flex-1 w-full bg-transparent resize-none outline-none text-base text-gray-700 dark:text-gray-300 leading-relaxed custom-scrollbar" placeholder="Comece a digitar..." oninput="updateNoteContent('${note.id}', this.value)">${note.content}</textarea>
                     </div>
-                    <textarea id="note-content-input" class="flex-1 bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 leading-relaxed custom-scrollbar" placeholder="Escreva aqui..." oninput="updateNoteContent('${note.id}', this.value)">${note.content}</textarea>
                 </div>
             `;
             lucide.createIcons();
@@ -548,57 +568,89 @@ window.renderNotes = function() {
         }
     }
 
+    // MODO LISTA (Grade de Cartões)
     let html = `
-        <div class="glass-panel p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-lg">
-            <h2 class="text-xl font-black text-indigo-900 dark:text-white">Anotações</h2>
-            <button onclick="createNote()" class="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg flex items-center justify-center transition active:scale-95">
-                <i data-lucide="plus" class="w-5 h-5"></i>
-            </button>
-        </div>
-        <div class="grid grid-cols-2 gap-4 pb-20">
+        <div class="max-w-5xl mx-auto">
+            <div class="glass-panel p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-lg">
+                <div>
+                    <h2 class="text-xl font-black text-indigo-900 dark:text-white">Minhas Notas</h2>
+                    <p class="text-xs text-gray-500">${notesData.length} notas criadas</p>
+                </div>
+                <button onclick="createNote()" class="w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg flex items-center justify-center transition active:scale-95 group">
+                    <i data-lucide="plus" class="w-6 h-6 group-hover:rotate-90 transition"></i>
+                </button>
+            </div>
+            <div class="columns-2 md:columns-3 gap-4 pb-20 space-y-4">
     `;
     
     if(notesData.length === 0) {
-        html += `<div class="col-span-2 text-center py-10 text-gray-400"><p>Nenhuma nota criada.</p></div>`;
+        html += `<div class="col-span-full text-center py-10 text-gray-400 break-inside-avoid-column"><p>Nenhuma nota criada.</p></div>`;
     } else {
-        notesData.sort((a,b) => b.updatedAt - a.updatedAt).forEach(note => {
+        // Ordena: Fixados primeiro, depois por data de atualização
+        const sortedNotes = [...notesData].sort((a,b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return b.updatedAt - a.updatedAt;
+        });
+
+        sortedNotes.forEach(note => {
             const date = new Date(note.updatedAt).toLocaleDateString('pt-BR');
+            const colorStyle = noteColors[note.color || 'gray'];
+            
             html += `
-                <div onclick="openNote('${note.id}')" class="glass-inner p-4 rounded-2xl cursor-pointer hover:bg-white/40 dark:hover:bg-white/10 transition group relative h-40 flex flex-col">
-                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 truncate">${note.title || 'Sem Título'}</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-4 flex-1 overflow-hidden">${note.content || '...'}</p>
-                    <div class="flex justify-between items-end mt-2">
-                        <span class="text-[10px] text-gray-400">${date}</span>
-                        <button onclick="event.stopPropagation(); deleteNote('${note.id}')" class="text-gray-400 hover:text-red-500 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
+                <div onclick="openNote('${note.id}')" class="break-inside-avoid-column mb-4 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition shadow-sm border ${colorStyle} relative group">
+                    ${note.pinned ? '<div class="absolute top-3 right-3 text-amber-500"><i data-lucide="pin" class="w-3 h-3 fill-current"></i></div>' : ''}
+                    <h3 class="font-bold text-lg mb-2 truncate pr-4 leading-tight">${note.title || 'Sem Título'}</h3>
+                    <p class="text-xs opacity-80 line-clamp-4 leading-relaxed mb-3 font-medium">${note.content || 'Nova nota...'}</p>
+                    <span class="text-[10px] opacity-60 font-bold uppercase tracking-wider">${date}</span>
                 </div>
             `;
         });
     }
-    html += `</div>`;
+    html += `</div></div>`;
     container.innerHTML = html;
     lucide.createIcons();
 }
 
 window.createNote = function() {
     const id = Date.now().toString();
-    notesData.unshift({ id, title: '', content: '', updatedAt: Date.now() });
+    notesData.unshift({ id, title: '', content: '', updatedAt: Date.now(), color: 'gray', pinned: false });
     activeNoteId = id;
     saveData();
-    renderNotes();
+    // Renderiza diretamente para abrir o editor
+    window.renderNotes();
 }
 
 window.openNote = function(id) {
     activeNoteId = id;
-    renderNotes();
+    window.renderNotes();
 }
 
 window.closeNote = function() {
     activeNoteId = null;
     saveData();
-    renderNotes();
+    window.renderNotes();
 }
 
+window.setNoteColor = function(id, color) {
+    const note = notesData.find(n => n.id === id);
+    if(note) {
+        note.color = color;
+        saveData();
+        window.renderNotes(); // Re-renderiza para mostrar a nova cor
+    }
+}
+
+window.togglePinNote = function(id) {
+    const note = notesData.find(n => n.id === id);
+    if(note) {
+        note.pinned = !note.pinned;
+        saveData();
+        window.renderNotes();
+    }
+}
+
+// Funções de Update (SEM RE-RENDERIZAÇÃO COMPLETA)
 window.updateNoteTitle = function(id, val) {
     const note = notesData.find(n => n.id === id);
     if(note) {
@@ -618,21 +670,25 @@ window.updateNoteContent = function(id, val) {
 }
 
 window.deleteNote = function(id) {
-    if(confirm('Excluir nota?')) {
+    if(confirm('Excluir esta nota permanentemente?')) {
         notesData = notesData.filter(n => n.id !== id);
         if(activeNoteId === id) activeNoteId = null;
         saveData();
-        renderNotes();
+        window.renderNotes();
     }
 }
 
 function debouncedSave() {
     const status = document.getElementById('save-status');
-    if(status) status.innerText = "Salvando...";
+    if(status) status.classList.remove('opacity-0');
+    
     clearTimeout(noteSaveTimeout);
     noteSaveTimeout = setTimeout(() => {
         saveData();
-        if(status) status.innerText = "Salvo";
+        if(status) {
+            status.innerText = "• Salvo";
+            setTimeout(() => status.classList.add('opacity-0'), 2000);
+        }
     }, 1000);
 }
 
