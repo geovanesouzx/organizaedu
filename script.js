@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { OrganizaIA } from "./organizaedu.js"; // IMPORTAÇÃO DO NOVO ARQUIVO
 
 // FIREBASE CONFIG
 const firebaseConfig = {
@@ -40,6 +41,75 @@ let currentAIProvider = 'gemini';
 let selectedDonationAmount = 6.00;
 let currentPaymentId = null;
 let paymentCheckInterval = null;
+let organizaIA = null; // Instância da classe IA
+
+// --- FUNÇÕES HELPER PARA A IA (CRUD DIRETO) ---
+// Essas funções permitem que a IA altere os dados diretamente sem abrir modais
+const AI_Actions = {
+    addClass: (data) => {
+        // data espera: { name, day, start, end, room, prof }
+        const newClass = {
+            id: Date.now().toString(),
+            name: data.name || "Nova Aula",
+            day: data.day || "seg",
+            start: data.start || "08:00",
+            end: data.end || "09:00",
+            room: data.room || "Sala Virtual",
+            prof: data.prof || "",
+            color: 'indigo' // Cor padrão
+        };
+        scheduleData.push(newClass);
+        saveData();
+        window.renderSchedule();
+        window.updateNextClassWidget();
+    },
+    deleteClass: (id) => {
+        // A IA pode tentar deletar por nome se não tiver ID, mas idealmente usa ID
+        // Vamos tentar achar pelo ID ou nome aproximado
+        let targetId = id;
+        if (!scheduleData.find(c => c.id === id)) {
+            const found = scheduleData.find(c => c.name.toLowerCase().includes(id.toLowerCase()));
+            if (found) targetId = found.id;
+        }
+        
+        if (targetId) {
+            scheduleData = scheduleData.filter(x => x.id !== targetId);
+            saveData();
+            window.renderSchedule();
+            window.updateNextClassWidget();
+        }
+    },
+    addTask: (data) => {
+        // data espera: { text, category, date }
+        tasksData.unshift({
+            id: Date.now(),
+            text: data.text || "Nova Tarefa",
+            category: data.category || "estudo",
+            date: data.date || "", // Formato ISO ou vazio
+            done: false
+        });
+        saveData();
+        window.renderTasks();
+    },
+    deleteTask: (id) => {
+        tasksData = tasksData.filter(x => x.id !== id);
+        saveData();
+        window.renderTasks();
+    },
+    addTransaction: (data) => {
+        financeData.unshift({
+            id: Date.now(),
+            desc: data.desc || "Gasto IA",
+            val: parseFloat(data.val) || 0,
+            date: new Date().toISOString()
+        });
+        saveData();
+        window.renderFinance();
+    }
+};
+
+// Inicializa a IA com as callbacks
+organizaIA = new OrganizaIA(AI_Actions);
 
 // PALETA DE CORES (Ajustada para funcionar com Tailwind CDN)
 const colorPalettes = {
@@ -74,6 +144,8 @@ const colorPalettes = {
         badge: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
     }
 };
+
+// ... existing code (UTILS IMGUR, AUTH, ETC - Mantenha igual até sendMessage) ...
 
 // --- UTILS IMGUR ---
 async function uploadToImgur(file) {
@@ -159,13 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // CORREÇÃO DO BOTÃO VOLTAR NATIVO (ANDROID/IOS)
     window.addEventListener('popstate', (event) => {
         const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
-        switchView(page, false); // false = não duplicar histórico
+        switchView(page, false);
     });
     
-    // Configura o estilo inicial do widget
     const checkModern = document.getElementById('check-modern');
     if(checkModern) {
         checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
@@ -275,7 +345,6 @@ function switchView(pageId, pushToHistory = true) {
         window.scrollTo(0, 0); 
     }
     
-    // Push no histórico se for navegação nova
     if (pushToHistory) {
         history.pushState({ page: pageId }, null, `#${pageId}`);
     }
@@ -312,7 +381,7 @@ window.navigateTo = (pageId) => {
     switchView(pageId, true);
 };
 
-// --- CHAT IA (Com Debug de Erro) ---
+// --- CHAT IA (ATUALIZADO PARA USAR O NOVO SISTEMA) ---
 window.setAIProvider = function(provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
@@ -339,6 +408,7 @@ window.loadChatMessages = function() {
         if(!container) return;
         container.innerHTML = '';
         
+        // Mensagem de boas-vindas
         container.innerHTML += `
             <div class="flex gap-3 max-w-[90%] animate-message-pop">
                 <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
@@ -346,7 +416,7 @@ window.loadChatMessages = function() {
                 </div>
                 <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
                     Olá! Eu sou a <strong>OrganizaEdu</strong>. 🧠<br><br>
-                    Estou conectada ao seu perfil. Posso ajudar com suas tarefas, notas, grade e muito mais!
+                    Posso <strong>criar tarefas</strong>, <strong>adicionar aulas</strong> e tirar suas dúvidas. O que vamos organizar hoje?
                 </div>
             </div>`;
 
@@ -361,10 +431,12 @@ window.loadChatMessages = function() {
                         <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto"><i data-lucide="user" class="w-4 h-4"></i></div>
                     </div>`;
             } else {
+                // Formata resposta da IA (caso venha do DB sem formatação)
+                const formattedContent = organizaIA ? organizaIA.formatResponse(content) : content;
                 container.innerHTML += `
                     <div class="flex gap-3 max-w-[85%] animate-message-pop mb-4">
                         <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20"><i data-lucide="sparkles" class="w-4 h-4"></i></div>
-                        <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">${content}</div>
+                        <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">${formattedContent}</div>
                     </div>`;
             }
         });
@@ -373,18 +445,20 @@ window.loadChatMessages = function() {
     });
 }
 
+// NOVA FUNÇÃO DE ENVIO USANDO O ORGANIZAEDU.JS
 window.sendMessage = async function(textOverride = null, type = 'text') {
     const input = document.getElementById('chat-input');
     const msgText = textOverride || input.value.trim();
     if (!msgText) return;
     if (!textOverride) input.value = '';
 
-    if(currentUser) {
+    if(currentUser && organizaIA) {
+        // 1. Salva mensagem do usuário
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
-        // Coleta o contexto do usuário para enviar à IA
+        // 2. Prepara o contexto para a IA
         const userContext = {
             profile: userProfileData,
             schedule: scheduleData,
@@ -395,49 +469,17 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             currentBudget: monthlyBudget
         };
 
-        try {
-            // Requisição para a API na Vercel (Deve ser /api/chat)
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    provider: currentAIProvider,
-                    message: msgText,
-                    history: [], // Poderia passar histórico limitado se necessário
-                    context: userContext // Envia os dados para a IA
-                })
-            });
+        // 3. Processa através da classe OrganizaIA
+        const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider);
 
-            // Verifica se a resposta é HTML (Erro 404/500 da Vercel)
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                const text = await response.text();
-                if (text.trim().startsWith('<')) {
-                    throw new Error("API não encontrada (404). Verifique se o arquivo api/chat.js foi enviado.");
-                }
-                throw new Error("Resposta inválida do servidor.");
-            }
-
-            const data = await response.json();
-            
-            if (!response.ok) throw new Error(data.error || "Erro na API");
-
-            if (data.text) {
-                 await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                    text: data.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
-                });
-            } else {
-                throw new Error("Resposta vazia da IA");
-            }
-
-        } catch (error) {
-            console.error("Erro IA Client:", error);
-            await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: `Erro: ${error.message}`, role: 'ai', type: 'text', timestamp: Date.now() + 100
-            });
-        }
+        // 4. Salva resposta da IA
+        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+            text: result.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
+        });
     }
 }
+
+// ... existing code (RESTANTE DAS FUNÇÕES DO UI - Manter tudo igual abaixo) ...
 
 window.uploadChatImage = async (input) => {
     const file = input.files[0];
@@ -456,7 +498,6 @@ window.uploadChatImage = async (input) => {
     }
 };
 
-// --- SISTEMA DE DOAÇÃO ---
 window.openDonationModal = function() {
     const modal = document.getElementById('donation-value-modal');
     modal.classList.remove('hidden');
@@ -596,7 +637,6 @@ async function checkPaymentStatus() {
     } catch (e) { console.log(e); }
 }
 
-// --- UTILS MODAIS ---
 window.openCustomInputModal = function(title, placeholder, initialValue, onConfirm) {
     const modal = document.getElementById('custom-input-modal');
     if(!modal) return;
@@ -644,7 +684,6 @@ window.closeGenericModal = function() {
      setTimeout(() => m.classList.add('hidden'), 300);
 }
 
-// --- GRADE & WIDGETS ---
 async function saveData() {
     if(currentUser) {
         await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'settings'), {
@@ -684,7 +723,6 @@ window.renderSchedule = function() {
         if (dayClasses.length > 0) {
             let html = `<div class="mb-4"><h3 class="text-sm font-bold text-indigo-500 uppercase mb-2 ml-1">${dayMap[dayKey]}</h3><div class="space-y-3">`;
             dayClasses.forEach(c => {
-                // CORREÇÃO DAS CORES (USA O OBJETO MAPEADO)
                 const palette = colorPalettes[c.color] || colorPalettes.indigo;
                 html += `
                     <div class="glass-inner p-4 rounded-xl border-l-4 ${palette.border} relative group cursor-pointer" onclick="openEditClassModal('${c.id}')">
@@ -790,7 +828,6 @@ window.updateNextClassWidget = function() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- GRADE CRUD ---
 const timeSlots = ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"];
 
 window.openAddClassModal = function() {
@@ -880,7 +917,6 @@ function renderColorPicker() {
     container.innerHTML = Object.keys(colorPalettes).map(color => { 
         const style = colorPalettes[color]; 
         const active = selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-900 scale-110' : ''; 
-        // A bolinha usa apenas o bg para mostrar a cor (extrai a primeira classe que é o bg)
         return `<button onclick="window.setColor('${color}')" class="w-8 h-8 rounded-full ${style.bg.split(' ')[0]} border border-gray-200 ${active} transition hover:scale-105"></button>`; 
     }).join(''); 
 }
@@ -892,7 +928,6 @@ window.confirmDeleteClass = function() { if(!classToDeleteId) return; scheduleDa
 window.closeDeleteModal = () => { const modal = document.getElementById('delete-confirm-modal'); modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); classToDeleteId = null; }
 window.deleteClass = window.requestDeleteClass;
 
-// --- TAREFAS (Restaurado) ---
 window.openAddTaskModal = function() {
      const modal = document.getElementById('task-modal');
      modal.classList.remove('hidden');
@@ -979,7 +1014,6 @@ window.renderTasks = function() {
     lucide.createIcons();
 }
 
-// --- CALCULADORA (Restaurado) ---
 let currentInput = '0';
 let isResult = false;
 let isRadians = true;
@@ -1046,7 +1080,6 @@ window.copyToClipboard = function() {
     });
 }
 
-// --- FINANCEIRO 2.0 (Restaurado) ---
 window.openAddTransactionModal = function() {
     const modal = document.getElementById('finance-modal');
     modal.classList.remove('hidden');
@@ -1129,7 +1162,6 @@ window.renderFinance = function() {
     lucide.createIcons();
 }
 
-// --- NOTAS (Mantido e Atualizado) ---
 const noteColors = {
     yellow: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100',
     green: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
@@ -1304,7 +1336,6 @@ function debouncedSave() {
     }, 1000);
 }
 
-// --- POMODORO & SONS ---
 let timerInterval, timeLeft = 1500, isRunning = false, timerMode = 'pomodoro';
 const modes = { pomodoro: 1500, short: 300, long: 900 };
 
@@ -1396,7 +1427,6 @@ window.toggleSound = function(type) {
     }
 }
 
-// --- ÔNIBUS (Restaurado) ---
 function addTime(baseTime, minutesToAdd) { const [h, m] = baseTime.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + minutesToAdd); return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
 function createTrip(startTime, endTime, routeType, speed = 'normal') { let stops = []; const factor = speed === 'fast' ? 0.7 : 1.0; if (routeType === 'saida-garagem') stops = [{ loc: 'Garagem', t: 0 }, { loc: 'RU', t: 2 }, { loc: 'Fitotecnia', t: 4 }, { loc: 'Solos', t: 6 }, { loc: 'Pav I', t: 8 }, { loc: 'Biblioteca', t: 10 }, { loc: 'Pav II', t: 12 }, { loc: 'Engenharia', t: 13 }, { loc: 'Portão II', t: 15 }, { loc: 'RU', t: 24 }]; else if (routeType === 'volta-campus') stops = [{ loc: 'RU', t: 0 }, { loc: 'Fitotecnia', t: 2 }, { loc: 'Solos', t: 4 }, { loc: 'Pav I', t: 6 }, { loc: 'Biblioteca', t: 8 }, { loc: 'Pav II', t: 10 }, { loc: 'Engenharia', t: 11 }, { loc: 'Portão II', t: 13 }, { loc: 'RU', t: 22 }]; else if (routeType === 'recolhe') stops = [{ loc: 'RU', t: 0 }, { loc: 'Fitotecnia', t: 2 }, { loc: 'Solos', t: 4 }, { loc: 'Garagem', t: 15 }]; else if (routeType === 'volta-e-recolhe') stops = [{ loc: 'RU', t: 0 }, { loc: 'Pav I', t: 5 }, { loc: 'Biblioteca', t: 6 }, { loc: 'Pav II', t: 8 }, { loc: 'Garagem', t: 25 }]; return { start: startTime, end: endTime, origin: routeType.includes('garagem') ? 'Garagem' : 'Campus', dest: routeType.includes('recolhe') ? 'Garagem' : 'Campus', route: routeType, stops: stops.map(s => ({ loc: s.loc, time: addTime(startTime, Math.round(s.t * factor)) })) }; }
 const busSchedule = [createTrip('06:25', '06:50', 'saida-garagem'), createTrip('06:50', '07:10', 'volta-campus', 'fast'), createTrip('07:10', '07:25', 'volta-campus', 'fast'), createTrip('07:25', '07:40', 'volta-campus', 'fast'), createTrip('07:40', '07:55', 'volta-campus', 'fast'), createTrip('07:55', '08:20', 'volta-e-recolhe'), createTrip('09:35', '10:00', 'saida-garagem'), createTrip('10:00', '10:25', 'volta-e-recolhe'), createTrip('11:30', '11:55', 'saida-garagem'), createTrip('11:55', '12:20', 'volta-campus'), createTrip('12:20', '12:45', 'volta-e-recolhe'), createTrip('13:00', '13:25', 'saida-garagem'), createTrip('13:25', '13:45', 'volta-campus'), createTrip('13:45', '14:00', 'volta-campus'), createTrip('14:00', '14:25', 'volta-e-recolhe'), createTrip('15:35', '16:00', 'saida-garagem'), createTrip('16:00', '16:25', 'volta-e-recolhe'), createTrip('17:30', '17:55', 'saida-garagem'), createTrip('17:55', '18:15', 'volta-campus'), createTrip('18:15', '18:40', 'volta-e-recolhe'), createTrip('20:00', '20:20', 'volta-e-recolhe', 'fast'), createTrip('20:40', '21:00', 'volta-e-recolhe', 'fast'), createTrip('21:40', '22:00', 'volta-e-recolhe', 'fast'), createTrip('22:30', '22:50', 'volta-e-recolhe', 'fast')];
