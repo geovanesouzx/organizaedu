@@ -27,7 +27,7 @@ let financeData = [];
 let gradesData = []; 
 let notesData = []; 
 let monthlyBudget = 0;
-let widgetStyle = 'modern'; // Padrão
+let widgetStyle = 'modern';
 let selectedColor = 'indigo';
 let activeNoteId = null;
 let noteSaveTimeout = null;
@@ -130,13 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Configura listeners de navegação (Voltar do celular)
-    window.addEventListener('popstate', (event) => {
-        const page = event.state ? event.state.page : 'home';
-        switchView(page);
-    });
-    
-    // Seletor de estilo inicial (pode ser sobrescrito pelo firestore depois)
+    // Seletor de estilo inicial
     const checkModern = document.getElementById('check-modern');
     if(checkModern) {
         checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
@@ -144,6 +138,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if(window.lucide) lucide.createIcons();
+});
+
+// Listener do Botão Voltar (Global)
+window.addEventListener('popstate', (event) => {
+    // Se existe estado no evento (navegação interna), usa ele.
+    // Se não (navegação externa ou inicial), tenta ler o hash da URL.
+    // Se nada, vai para home.
+    const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
+    switchView(page);
 });
 
 window.logout = function() {
@@ -219,7 +222,6 @@ function initDataSync() {
         monthlyBudget = data.monthlyBudget || 0;
         notesData = data.notes || [];
         
-        // Atualiza o estilo do widget se vier do banco
         if(data.widgetStyle) {
             widgetStyle = data.widgetStyle;
             updateWidgetStyleUI();
@@ -242,13 +244,13 @@ function updateWidgetStyleUI() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- NAVEGAÇÃO (CORRIGIDA) ---
+// --- NAVEGAÇÃO (CORRIGIDA PARA MOBILE) ---
 function switchView(pageId) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + pageId);
     if (target) {
         target.classList.remove('hidden');
-        window.scrollTo(0, 0); // Reseta scroll
+        window.scrollTo(0, 0); 
     }
     
     // Atualiza Header
@@ -263,7 +265,7 @@ function switchView(pageId) {
         else backBtn.classList.remove('hidden');
     }
 
-    // Dock Mobile Highlight
+    // Dock Mobile
     document.querySelectorAll('.mobile-nav-item').forEach(btn => {
         btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
         btn.classList.add('text-gray-400');
@@ -279,17 +281,19 @@ function switchView(pageId) {
         navBtn.classList.add('text-indigo-600', 'dark:text-indigo-400');
     }
     
-    // Refresh ícones
     if(window.lucide) lucide.createIcons();
 }
 
 window.navigateTo = (pageId) => {
-    // Adiciona ao histórico do navegador (CRUCIAL PARA O BOTÃO DE VOLTAR DO ANDROID/IOS)
+    // Verifica se já estamos na página para evitar duplicar histórico
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash === pageId) return;
+
     history.pushState({ page: pageId }, null, `#${pageId}`);
     switchView(pageId);
 };
 
-// --- CHAT IA (CORRIGIDO) ---
+// --- CHAT IA ---
 window.setAIProvider = function(provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
@@ -346,23 +350,19 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
         });
 
         try {
-            // Chamada à API da Vercel
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     provider: currentAIProvider,
                     message: msgText,
-                    history: [] // Pode adicionar histórico se quiser
+                    history: [] 
                 })
             });
 
             const data = await response.json();
             
-            if (!response.ok) {
-                // Erro HTTP (ex: 500 ou 400)
-                throw new Error(data.error || "Erro na resposta da API");
-            }
+            if (!response.ok) throw new Error(data.error || "Erro na API");
 
             if (data.text) {
                  await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
@@ -373,9 +373,9 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             }
 
         } catch (error) {
-            console.error("Erro IA Client:", error);
+            console.error("Erro IA:", error);
             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: `Erro: ${error.message}. Verifique as chaves na Vercel.`, role: 'ai', type: 'text', timestamp: Date.now() + 100
+                text: `Erro de conexão: ${error.message}`, role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }
     }
@@ -604,11 +604,7 @@ async function saveData() {
 window.setWidgetStyle = function(style, save = true) {
     widgetStyle = style;
     if(save) saveData();
-    
-    document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
-    const check = document.getElementById('check-' + style);
-    if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
-    
+    updateWidgetStyleUI();
     if(window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
@@ -670,7 +666,6 @@ window.updateNextClassWidget = function() {
         else if (currentMinutes >= startMins && currentMinutes < endMins) { nextClass = c; status = 'now'; break; }
     }
 
-    // --- RESTAURAÇÃO DA LÓGICA DE 2 ESTILOS (MODERNO E CLÁSSICO) ---
     if(nextClass) {
         const [hS, mS] = nextClass.start.split(':').map(Number); 
         const startMins = hS * 60 + mS; 
@@ -715,7 +710,7 @@ window.updateNextClassWidget = function() {
                 </div>
             `;
         } else {
-            // Estilo Moderno (Centralizado)
+            // Estilo Moderno
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full text-center">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 ${status === 'now' ? 'bg-green-100 text-green-600 animate-pulse' : 'bg-blue-100 text-blue-600'}">
@@ -1469,6 +1464,15 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if(window.lucide) lucide.createIcons();
     
+    // Inicialização da Navegação Correta:
+    // Pega a página atual do hash ou usa 'home'
     const hash = window.location.hash.replace('#', '') || 'home';
-    if (window.navigateTo) window.navigateTo(hash);
+    
+    // Configura o estado inicial se não existir, sem criar nova entrada no histórico
+    // Isso garante que o botão voltar funcione corretamente desde o início
+    if (!history.state) {
+        history.replaceState({ page: hash }, null, `#${hash}`);
+    }
+    
+    switchView(hash);
 });
