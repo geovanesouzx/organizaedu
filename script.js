@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { OrganizaIA } from "./organizaedu.js"; // IMPORTAÇÃO DO NOVO ARQUIVO
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { OrganizaIA } from "./organizaedu.js"; 
 
 // FIREBASE CONFIG
 const firebaseConfig = {
@@ -36,18 +36,21 @@ let classToDeleteId = null;
 let selectedTaskCategory = 'estudo';
 let currentTaskTab = 'pending';
 
-// IA & Doação
+// IA Vars
 let currentAIProvider = 'gemini';
+let activeChatId = null;
+let chatUnsubscribe = null;
+let currentChatHistory = []; // Memória local do chat para limitar o contexto enviado
+let organizaIA = null;
+
+// Doação
 let selectedDonationAmount = 6.00;
 let currentPaymentId = null;
 let paymentCheckInterval = null;
-let organizaIA = null; // Instância da classe IA
 
 // --- FUNÇÕES HELPER PARA A IA (CRUD DIRETO) ---
-// Essas funções permitem que a IA altere os dados diretamente sem abrir modais
 const AI_Actions = {
     addClass: (data) => {
-        // data espera: { name, day, start, end, room, prof }
         const newClass = {
             id: Date.now().toString(),
             name: data.name || "Nova Aula",
@@ -56,7 +59,7 @@ const AI_Actions = {
             end: data.end || "09:00",
             room: data.room || "Sala Virtual",
             prof: data.prof || "",
-            color: 'indigo' // Cor padrão
+            color: 'indigo'
         };
         scheduleData.push(newClass);
         saveData();
@@ -64,8 +67,6 @@ const AI_Actions = {
         window.updateNextClassWidget();
     },
     deleteClass: (id) => {
-        // A IA pode tentar deletar por nome se não tiver ID, mas idealmente usa ID
-        // Vamos tentar achar pelo ID ou nome aproximado
         let targetId = id;
         if (!scheduleData.find(c => c.id === id)) {
             const found = scheduleData.find(c => c.name.toLowerCase().includes(id.toLowerCase()));
@@ -80,12 +81,11 @@ const AI_Actions = {
         }
     },
     addTask: (data) => {
-        // data espera: { text, category, date }
         tasksData.unshift({
             id: Date.now(),
             text: data.text || "Nova Tarefa",
             category: data.category || "estudo",
-            date: data.date || "", // Formato ISO ou vazio
+            date: data.date || "", 
             done: false
         });
         saveData();
@@ -108,44 +108,16 @@ const AI_Actions = {
     }
 };
 
-// Inicializa a IA com as callbacks
 organizaIA = new OrganizaIA(AI_Actions);
 
-// PALETA DE CORES (Ajustada para funcionar com Tailwind CDN)
+// PALETA DE CORES
 const colorPalettes = {
-    indigo: { 
-        bg: 'bg-indigo-100 dark:bg-indigo-900', 
-        text: 'text-indigo-700 dark:text-indigo-200', 
-        border: 'border-l-indigo-500',
-        badge: 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200'
-    },
-    emerald: { 
-        bg: 'bg-emerald-100 dark:bg-emerald-900', 
-        text: 'text-emerald-700 dark:text-emerald-200', 
-        border: 'border-l-emerald-500',
-        badge: 'bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200'
-    },
-    orange: { 
-        bg: 'bg-orange-100 dark:bg-orange-900', 
-        text: 'text-orange-700 dark:text-orange-200', 
-        border: 'border-l-orange-500',
-        badge: 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200'
-    },
-    rose: { 
-        bg: 'bg-rose-100 dark:bg-rose-900', 
-        text: 'text-rose-700 dark:text-rose-200', 
-        border: 'border-l-rose-500',
-        badge: 'bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-200'
-    },
-    blue: { 
-        bg: 'bg-blue-100 dark:bg-blue-900', 
-        text: 'text-blue-700 dark:text-blue-200', 
-        border: 'border-l-blue-500',
-        badge: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
-    }
+    indigo: { bg: 'bg-indigo-100 dark:bg-indigo-900', text: 'text-indigo-700 dark:text-indigo-200', border: 'border-l-indigo-500', badge: 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200' },
+    emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900', text: 'text-emerald-700 dark:text-emerald-200', border: 'border-l-emerald-500', badge: 'bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200' },
+    orange: { bg: 'bg-orange-100 dark:bg-orange-900', text: 'text-orange-700 dark:text-orange-200', border: 'border-l-orange-500', badge: 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200' },
+    rose: { bg: 'bg-rose-100 dark:bg-rose-900', text: 'text-rose-700 dark:text-rose-200', border: 'border-l-rose-500', badge: 'bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-200' },
+    blue: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-700 dark:text-blue-200', border: 'border-l-blue-500', badge: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200' }
 };
-
-// ... existing code (UTILS IMGUR, AUTH, ETC - Mantenha igual até sendMessage) ...
 
 // --- UTILS IMGUR ---
 async function uploadToImgur(file) {
@@ -184,7 +156,7 @@ onAuthStateChanged(auth, async (user) => {
 
         if (profileSnap.exists() && profileSnap.data().username) {
             initDataSync();
-            loadChatMessages();
+            initChatSystem(); // Inicia o sistema de chat (histórico e nova thread)
             
             if(loadingScreen) {
                 loadingScreen.style.opacity = '0';
@@ -345,6 +317,16 @@ function switchView(pageId, pushToHistory = true) {
         window.scrollTo(0, 0); 
     }
     
+    // LÓGICA DA BARRA DE NAVEGAÇÃO MOBILE (OCULTAR NO CHAT)
+    const mobileNav = document.querySelector('.glass-nav');
+    if (mobileNav) {
+        if (pageId === 'ia') {
+            mobileNav.classList.add('hidden-nav');
+        } else {
+            mobileNav.classList.remove('hidden-nav');
+        }
+    }
+    
     if (pushToHistory) {
         history.pushState({ page: pageId }, null, `#${pageId}`);
     }
@@ -381,7 +363,161 @@ window.navigateTo = (pageId) => {
     switchView(pageId, true);
 };
 
-// --- CHAT IA (ATUALIZADO PARA USAR O NOVO SISTEMA) ---
+// --- CHAT IA & HISTÓRICO ---
+function initChatSystem() {
+    if (!currentUser) return;
+    
+    // 1. Carregar lista de chats (Histórico)
+    const chatsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads');
+    const q = query(chatsRef, orderBy('updatedAt', 'desc'), limit(20));
+    
+    onSnapshot(q, (snapshot) => {
+        const historyList = document.getElementById('history-list');
+        if (!historyList) return;
+        historyList.innerHTML = '';
+        
+        if (snapshot.empty) {
+            historyList.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Nenhum histórico.</p>';
+        }
+
+        snapshot.forEach((doc) => {
+            const chat = doc.data();
+            const isActive = doc.id === activeChatId;
+            const dateStr = chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : '';
+            
+            historyList.innerHTML += `
+                <div onclick="loadChatSession('${doc.id}')" class="p-3 rounded-xl cursor-pointer transition hover:bg-black/5 dark:hover:bg-white/10 ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}">
+                    <p class="text-sm font-bold text-slate-800 dark:text-white truncate">${chat.title || 'Nova Conversa'}</p>
+                    <p class="text-[10px] text-gray-400 mt-1">${dateStr}</p>
+                </div>
+            `;
+        });
+    });
+
+    // 2. Tentar carregar a última conversa ou criar nova
+    // Se já estiver na tela de IA, carrega, senão espera o clique
+}
+
+window.startNewChat = async function() {
+    if (!currentUser) return;
+    
+    // Cria um ID único para a nova thread
+    activeChatId = Date.now().toString();
+    
+    // Limpa a tela
+    const container = document.getElementById('chat-messages');
+    if (container) container.innerHTML = '';
+    
+    // Adiciona mensagem inicial
+    addWelcomeMessage();
+    
+    // Reseta memória local
+    currentChatHistory = [];
+    
+    // Fecha o drawer se estiver aberto
+    window.toggleHistory(false);
+    
+    // Cria o documento da thread no Firestore
+    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId), {
+        title: 'Nova Conversa',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    });
+
+    // Inicia listener para esta nova thread
+    listenToActiveChat();
+}
+
+window.loadChatSession = function(chatId) {
+    if (activeChatId === chatId) {
+        window.toggleHistory(false);
+        return;
+    }
+    
+    activeChatId = chatId;
+    currentChatHistory = [];
+    listenToActiveChat();
+    window.toggleHistory(false);
+}
+
+window.toggleHistory = function(show) {
+    const drawer = document.getElementById('history-drawer');
+    if (show) {
+        drawer.classList.remove('translate-x-full');
+    } else {
+        drawer.classList.add('translate-x-full');
+    }
+}
+
+function addWelcomeMessage() {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="flex gap-3 max-w-[90%] animate-message-pop">
+            <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                Olá! Eu sou a <strong>OrganizaEdu</strong>. 🧠<br><br>
+                Posso <strong>criar tarefas</strong>, <strong>adicionar aulas</strong> e tirar suas dúvidas. O que vamos organizar hoje?
+            </div>
+        </div>`;
+}
+
+function listenToActiveChat() {
+    if (chatUnsubscribe) chatUnsubscribe(); // Para de ouvir o chat anterior
+    if (!currentUser || !activeChatId) return;
+
+    const messagesRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(50));
+
+    chatUnsubscribe = onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+        
+        // Se for a primeira vez carregando e estiver vazio, mostra boas-vindas
+        if (snapshot.empty && container.innerHTML.trim() === '') {
+            addWelcomeMessage();
+            return;
+        }
+
+        // Limpa e reconstrói (para garantir ordem e evitar duplicação em lógica simples)
+        // Em app real, faríamos append inteligente, mas aqui simplificamos
+        if (!snapshot.empty) container.innerHTML = ''; 
+
+        // Atualiza histórico local para contexto da IA
+        currentChatHistory = [];
+
+        snapshot.forEach((doc) => {
+            const msg = doc.data();
+            currentChatHistory.push({ role: msg.role, text: msg.text }); // Guarda para contexto
+            
+            const content = msg.type === 'image' ? `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">` : msg.text;
+            
+            if (msg.role === 'user') {
+                container.innerHTML += `
+                    <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end mb-4">
+                        <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">${content}</div>
+                        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto"><i data-lucide="user" class="w-4 h-4"></i></div>
+                    </div>`;
+            } else {
+                const formattedContent = organizaIA ? organizaIA.formatResponse(content) : content;
+                container.innerHTML += `
+                    <div class="flex gap-3 max-w-[85%] animate-message-pop mb-4">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20"><i data-lucide="sparkles" class="w-4 h-4"></i></div>
+                        <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">${formattedContent}</div>
+                    </div>`;
+            }
+        });
+        
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        
+        // Atualiza ícones
+        if(window.lucide) lucide.createIcons();
+    });
+}
+
 window.setAIProvider = function(provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
@@ -400,65 +536,37 @@ window.setAIProvider = function(provider) {
     }
 }
 
-window.loadChatMessages = function() {
-    if(!currentUser) return;
-    const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), orderBy('timestamp', 'asc'), limit(50));
-    onSnapshot(q, (snapshot) => {
-        const container = document.getElementById('chat-messages');
-        if(!container) return;
-        container.innerHTML = '';
-        
-        // Mensagem de boas-vindas
-        container.innerHTML += `
-            <div class="flex gap-3 max-w-[90%] animate-message-pop">
-                <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
-                    <i data-lucide="sparkles" class="w-4 h-4"></i>
-                </div>
-                <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
-                    Olá! Eu sou a <strong>OrganizaEdu</strong>. 🧠<br><br>
-                    Posso <strong>criar tarefas</strong>, <strong>adicionar aulas</strong> e tirar suas dúvidas. O que vamos organizar hoje?
-                </div>
-            </div>`;
-
-        snapshot.forEach((doc) => {
-            const msg = doc.data();
-            const content = msg.type === 'image' ? `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">` : msg.text;
-            
-            if (msg.role === 'user') {
-                container.innerHTML += `
-                    <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end mb-4">
-                        <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">${content}</div>
-                        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto"><i data-lucide="user" class="w-4 h-4"></i></div>
-                    </div>`;
-            } else {
-                // Formata resposta da IA (caso venha do DB sem formatação)
-                const formattedContent = organizaIA ? organizaIA.formatResponse(content) : content;
-                container.innerHTML += `
-                    <div class="flex gap-3 max-w-[85%] animate-message-pop mb-4">
-                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20"><i data-lucide="sparkles" class="w-4 h-4"></i></div>
-                        <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">${formattedContent}</div>
-                    </div>`;
-            }
-        });
-        
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-    });
-}
-
-// NOVA FUNÇÃO DE ENVIO USANDO O ORGANIZAEDU.JS
+// NOVA FUNÇÃO DE ENVIO COM LIMITE DE CONTEXTO
 window.sendMessage = async function(textOverride = null, type = 'text') {
+    if (!currentUser) return;
+    
+    // Se não tiver chat ativo, cria um
+    if (!activeChatId) {
+        await startNewChat();
+        // Pequeno delay para garantir que o listener ativou
+        await new Promise(r => setTimeout(r, 100));
+    }
+
     const input = document.getElementById('chat-input');
     const msgText = textOverride || input.value.trim();
     if (!msgText) return;
     if (!textOverride) input.value = '';
 
-    if(currentUser && organizaIA) {
-        // 1. Salva mensagem do usuário
-        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+    if(organizaIA) {
+        // 1. Salva mensagem do usuário na subcoleção da thread
+        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
+        
+        // Atualiza título da thread se for a primeira mensagem e data de atualização
+        const threadRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId);
+        if (currentChatHistory.length < 2) {
+             await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
+        } else {
+             await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
+        }
 
-        // 2. Prepara o contexto para a IA
+        // 2. Prepara o contexto
         const userContext = {
             profile: userProfileData,
             schedule: scheduleData,
@@ -468,12 +576,16 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
+        
+        // CORREÇÃO: Limita o histórico enviado para a API (Últimas 10 mensagens apenas)
+        // Isso evita o erro de "payload too large" ou travamento
+        const limitedHistory = currentChatHistory.slice(-10);
 
-        // 3. Processa através da classe OrganizaIA
-        const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider);
+        // 3. Processa
+        const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider, limitedHistory);
 
         // 4. Salva resposta da IA
-        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: result.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
         });
     }
