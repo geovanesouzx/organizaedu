@@ -7,7 +7,7 @@ body {
     height: 100dvh; 
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
+    overflow: hidden; /* Importante para impedir scroll do body */
 }
 
 .dark body {
