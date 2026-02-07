@@ -22,9 +22,8 @@ const appId = "organiza_edu_v1";
 // Variável global para armazenar dados do perfil em memória
 let userProfileData = null;
 
-// IA Provider e Histórico
+// IA Provider
 let currentAIProvider = 'gemini';
-let chatHistory = []; // Para manter o contexto da conversa
 
 // Donation
 let selectedDonationAmount = 6.00;
@@ -32,30 +31,38 @@ let currentPaymentId = null;
 let paymentCheckInterval = null;
 
 
-// --- IMGUR UPLOAD FUNCTION ---
+// --- UPLOAD VIA API VERCEL (SEGURO) ---
 async function uploadToImgur(file) {
-    const clientId = "513bb727cecf9ac"; // Client ID fornecido
-    const formData = new FormData();
-    formData.append("image", file);
+    // Helper para converter arquivo em Base64
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 
     try {
-        const response = await fetch("https://api.imgur.com/3/image", {
+        const base64Content = await toBase64(file);
+        
+        // Chama a API da Vercel em vez do Imgur direto
+        const response = await fetch("/api/upload", {
             method: "POST",
             headers: {
-                Authorization: `Client-ID ${clientId}`,
+                "Content-Type": "application/json"
             },
-            body: formData,
+            body: JSON.stringify({ image: base64Content }),
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.data.error || "Falha no upload para o Imgur");
+            throw new Error(errorData.error || "Falha no upload (API Vercel)");
         }
 
         const data = await response.json();
+        // A API retorna a estrutura do Imgur, então o link está em data.data.link
         return data.data.link;
     } catch (error) {
-        console.error("Erro Imgur:", error);
+        console.error("Erro Upload:", error);
         throw error;
     }
 }
@@ -135,7 +142,7 @@ window.logout = function() {
     }).catch((error) => console.error(error));
 }
 
-// --- SETUP SCREEN LOGIC (IMGUR) ---
+// --- SETUP SCREEN LOGIC (USANDO API VERCEL) ---
 window.uploadToImgurSetup = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -145,7 +152,7 @@ window.uploadToImgurSetup = async (input) => {
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
 
     try {
-        const url = await uploadToImgur(file);
+        const url = await uploadToImgur(file); // Usa a nova função segura
         document.getElementById('setup-profile-preview').src = url;
         status.innerText = "Imagem carregada com sucesso!";
         status.className = "text-xs text-green-500 mt-1 font-bold";
@@ -154,9 +161,10 @@ window.uploadToImgurSetup = async (input) => {
         console.error(error);
         status.innerText = "Erro no upload. Tente novamente.";
         status.className = "text-xs text-red-500 mt-1 font-bold";
+        // Fallback visual temporário apenas local
         const localUrl = URL.createObjectURL(file);
         document.getElementById('setup-profile-preview').src = localUrl;
-        window.tempSetupAvatarUrl = localUrl;
+        window.tempSetupAvatarUrl = localUrl; // Aviso: Isso não salva na nuvem se o upload falhar
     }
 };
 
@@ -375,10 +383,6 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
-        // Adiciona ao histórico local
-        chatHistory.push({ role: 'user', text: msgText });
-        if (chatHistory.length > 10) chatHistory.shift();
-
         // 2. Chama API Real na Vercel
         try {
             // Prepara contexto para a IA
@@ -408,16 +412,16 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
                 }
             `;
 
-            let historyPayload = [{ role: 'system', text: systemInstructionText }];
-            chatHistory.forEach(msg => { historyPayload.push({ role: msg.role, text: msg.text }); });
-
+            // Histórico básico
+            const history = [{ role: 'user', text: msgText }]; 
+            
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     provider: currentAIProvider,
                     message: msgText,
-                    history: historyPayload
+                    history: [{ role: 'system', text: systemInstructionText }]
                 })
             });
 
@@ -426,14 +430,18 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             if (data.text) {
                 // Limpa markdown de JSON se houver
                 let cleanText = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
-                const responseJson = JSON.parse(cleanText);
+                let responseJson = {};
+                try {
+                    responseJson = JSON.parse(cleanText);
+                } catch(e) {
+                    responseJson = { message: cleanText }; // Fallback se não for JSON
+                }
 
                 // 3. Salva resposta da IA no Firestore
                 if (responseJson.message) {
                     await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
                         text: responseJson.message, role: 'ai', type: 'text', timestamp: Date.now() + 100
                     });
-                    chatHistory.push({ role: 'assistant', text: responseJson.message });
                 }
 
                 // 4. Executa comandos
@@ -516,7 +524,7 @@ window.uploadChatImage = async (input) => {
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
     try {
-        const url = await uploadToImgur(file);
+        const url = await uploadToImgur(file); // Usa a nova função segura
         await sendMessage(url, 'image'); 
     } catch (error) {
         console.error(error);
@@ -551,9 +559,6 @@ window.closeDonationModal = function() {
 window.selectDonationValue = function(val) {
     selectedDonationAmount = val;
     document.getElementById('custom-donation-input').value = ''; // Limpa custom
-    
-    // Visual feedback
-    // (Poderia adicionar classes de seleção aqui se necessário)
 }
 
 window.checkCustomValue = function() {
@@ -604,7 +609,7 @@ async function processPaymentWithCpf(cpf) {
                 name: userProfileData?.displayName || "Apoiador OrganizaEdu",
                 email: currentUser?.email || "anonimo@organizaedu.com",
                 cpf: cpf,
-                value: selectedDonationAmount // Passando o valor dinâmico se a API suportar, senão edite a API
+                value: selectedDonationAmount // Passando o valor dinâmico se a API suportar
             })
         });
 
@@ -670,12 +675,9 @@ async function checkPaymentStatus() {
     }
 }
 
-// --- EDITAR PERFIL (CORRIGIDO PARA CARREGAR DADOS SALVOS) ---
+// --- EDITAR PERFIL ---
 window.openEditProfileView = () => {
-    // Tenta usar os dados globais carregados do Firestore, se não, usa o DOM como fallback
     const data = userProfileData || {};
-    
-    // Valores padrão ou do DOM se o objeto estiver vazio
     const currentName = data.name || document.getElementById('profile-name').innerText;
     const currentUsername = data.username || document.getElementById('profile-username').innerText.replace('@', '');
     const currentCourse = data.course || "Curso não informado";
@@ -699,14 +701,14 @@ window.uploadToImgur = async (input) => {
     status.innerText = "Enviando...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
     try {
-        const url = await uploadToImgur(file);
+        const url = await uploadToImgur(file); // Usa API
         document.getElementById('edit-profile-preview').src = url;
         status.innerText = "Upload concluído!";
         status.className = "text-xs text-green-500 mt-1 font-bold";
         window.tempAvatarUrl = url;
     } catch (error) {
         console.error(error);
-        status.innerText = "Erro no upload (Tente novamente).";
+        status.innerText = "Erro no upload.";
         status.className = "text-xs text-red-500 mt-1 font-bold";
         const local = URL.createObjectURL(file);
         document.getElementById('edit-profile-preview').src = local;
@@ -725,7 +727,6 @@ window.saveProfileChanges = async () => {
     let currentSrc = document.getElementById('edit-profile-preview').src;
     let avatarUrl = window.tempAvatarUrl || currentSrc;
     
-    // Atualização Otimista
     document.getElementById('profile-name').innerText = name;
     document.getElementById('profile-username').innerText = '@' + username;
     document.getElementById('profile-course').innerText = `${course || "Curso não informado"} • ${semester || "1º Semestre"}`;
@@ -734,7 +735,7 @@ window.saveProfileChanges = async () => {
 
     if (currentUser) {
         const newData = { name, username, course, semester, avatarUrl };
-        userProfileData = { ...userProfileData, ...newData }; // Atualiza localmente
+        userProfileData = { ...userProfileData, ...newData };
         await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), newData, { merge: true });
         window.history.back(); 
     }
@@ -783,7 +784,6 @@ async function saveData() {
 window.setWidgetStyle = function(style, save = true) {
     widgetStyle = style;
     if(save) saveData();
-    
     document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
     const check = document.getElementById('check-' + style);
     if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
