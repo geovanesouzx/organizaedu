@@ -15,6 +15,8 @@ export default async function handler(req, res) {
     }
 
     const { provider, message, history, context } = req.body;
+    
+    // Variáveis de ambiente (salvas na Vercel)
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const GROQ_KEY = process.env.GROQ_API_KEY;
 
@@ -80,8 +82,12 @@ export default async function handler(req, res) {
             const fullSystemPrompt = systemProfile + "\n\n" + toolsInstruction;
             
             let contents = [];
+            // Mapeamento correto para Gemini: 'user' ou 'model'
             if (history && Array.isArray(history)) {
-                history.forEach(msg => contents.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] }));
+                history.forEach(msg => {
+                    const role = (msg.role === 'user') ? 'user' : 'model';
+                    contents.push({ role: role, parts: [{ text: msg.text }] });
+                });
             }
             contents.push({ role: "user", parts: [{ text: message }] });
 
@@ -101,7 +107,9 @@ export default async function handler(req, res) {
             const data = await response.json();
             if (data.error) throw new Error(`Erro Gemini: ${data.error.message}`);
             
-            const rawText = data.candidates[0].content.parts[0].text;
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawText) throw new Error("Resposta vazia do Gemini");
+
             try {
                 result = JSON.parse(rawText);
             } catch (e) {
@@ -113,9 +121,16 @@ export default async function handler(req, res) {
              if (!GROQ_KEY) throw new Error("Chave API Groq não configurada.");
              const url = "https://api.groq.com/openai/v1/chat/completions";
              
+             // Mapeamento correto para Llama/OpenAI: 'user' ou 'assistant'
+             // CORREÇÃO: Firestore salva como 'ai', Groq precisa de 'assistant'
+             const historyMessages = history.map(m => ({ 
+                 role: (m.role === 'user' ? 'user' : 'assistant'), 
+                 content: m.text 
+             }));
+
              const messages = [
                  { role: "system", content: systemProfile + "\n\n" + toolsInstruction + "\nIMPORTANTE: Responda SEMPRE em JSON válido." },
-                 ...history.map(m => ({ role: m.role, content: m.text })),
+                 ...historyMessages,
                  { role: "user", content: message }
              ];
 

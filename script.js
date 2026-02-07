@@ -127,10 +127,7 @@ const AI_Actions = {
         }
     },
     controlTimer: (data) => {
-        // data: { action: 'start'|'stop', mode: 'pomodoro'|'short'|'long' }
         if (data.mode && window.setTimerMode) window.setTimerMode(data.mode);
-        
-        // Verifica estado atual através do botão (gambiarra visual robusta)
         const btn = document.getElementById('btn-timer-start');
         const isCurrentlyRunning = btn && btn.innerHTML.includes('pause');
         
@@ -141,7 +138,6 @@ const AI_Actions = {
         }
     },
     addGrade: (data) => {
-        // data: { subject, value, name }
         gradesData.push({
             id: Date.now(),
             subject: data.subject || "Geral",
@@ -153,7 +149,6 @@ const AI_Actions = {
         window.showModal("Nota Salva 🎓", `Nota ${data.value} adicionada em ${data.subject}.`);
     },
     changeTheme: (data) => {
-        // data: { mode: 'dark' | 'light' }
         const isDark = document.documentElement.classList.contains('dark');
         if (data.mode === 'dark' && !isDark) document.documentElement.classList.add('dark');
         else if (data.mode === 'light' && isDark) document.documentElement.classList.remove('dark');
@@ -174,7 +169,7 @@ const colorPalettes = {
     blue: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-700 dark:text-blue-200', border: 'border-l-blue-500', badge: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200' }
 };
 
-// --- UTILS IMGUR ---
+// --- UTILS IMGUR (CORRIGIDO COM O CLIENT ID FORNECIDO) ---
 async function uploadToImgur(file) {
     const clientId = "513bb727cecf9ac"; 
     const formData = new FormData();
@@ -189,6 +184,7 @@ async function uploadToImgur(file) {
 
         if (!response.ok) throw new Error("Falha no upload para o Imgur");
         const data = await response.json();
+        // O Imgur retorna o link dentro de data.data.link
         return data.data.link;
     } catch (error) {
         console.error("Erro Imgur:", error);
@@ -211,7 +207,7 @@ onAuthStateChanged(auth, async (user) => {
 
         if (profileSnap.exists() && profileSnap.data().username) {
             initDataSync();
-            initChatSystem(); // Inicia o sistema de chat (histórico e nova thread)
+            initChatSystem(); 
             
             if(loadingScreen) {
                 loadingScreen.style.opacity = '0';
@@ -289,6 +285,7 @@ window.uploadToImgurSetup = async (input) => {
         window.tempSetupAvatarUrl = url;
     } catch (e) {
         status.innerText = "Erro.";
+        console.log(e);
     }
 };
 
@@ -373,7 +370,6 @@ function switchView(pageId, pushToHistory = true) {
         window.scrollTo(0, 0); 
     }
     
-    // LÓGICA DA BARRA DE NAVEGAÇÃO MOBILE (OCULTAR NO CHAT)
     const mobileNav = document.querySelector('.glass-nav');
     if (mobileNav) {
         if (pageId === 'ia') {
@@ -383,11 +379,16 @@ function switchView(pageId, pushToHistory = true) {
         }
     }
     
+    // PREENCHE DADOS AO ABRIR EDIÇÃO
+    if (pageId === 'edit-profile') {
+        populateEditProfile();
+    }
+    
     if (pushToHistory) {
         history.pushState({ page: pageId }, null, `#${pageId}`);
     }
 
-    const titles = { 'home': 'Visão Geral', 'aulas': 'Grade', 'ia': 'Organiza IA', 'ferramentas': 'Ferramentas', 'onibus': 'Circular', 'perfil': 'Perfil', 'financeiro': 'Financeiro', 'tarefas': 'Tarefas', 'notas': 'Anotações', 'calculadora': 'Calculadora', 'pomo': 'Foco', 'sounds': 'Sons' };
+    const titles = { 'home': 'Visão Geral', 'aulas': 'Grade', 'ia': 'Organiza IA', 'ferramentas': 'Ferramentas', 'onibus': 'Circular', 'perfil': 'Perfil', 'financeiro': 'Financeiro', 'tarefas': 'Tarefas', 'notas': 'Anotações', 'calculadora': 'Calculadora', 'pomo': 'Foco', 'sounds': 'Sons', 'edit-profile': 'Editar Perfil', 'config': 'Ajustes' };
     const elTitle = document.getElementById('header-title');
     if(elTitle) elTitle.innerText = titles[pageId] || 'OrganizaEdu';
 
@@ -417,6 +418,64 @@ function switchView(pageId, pushToHistory = true) {
 
 window.navigateTo = (pageId) => {
     switchView(pageId, true);
+};
+
+// --- PERFIL E UPLOAD ---
+window.populateEditProfile = function() {
+    if(userProfileData) {
+        document.getElementById('edit-name').value = userProfileData.name || '';
+        document.getElementById('edit-username').value = userProfileData.username || '';
+        document.getElementById('edit-course').value = userProfileData.course || '';
+        document.getElementById('edit-semester').value = userProfileData.semester || '';
+        
+        const avatarUrl = userProfileData.avatarUrl || currentUser?.photoURL;
+        if(avatarUrl) document.getElementById('edit-profile-preview').src = avatarUrl;
+    }
+}
+
+// UPLOAD PARA IMGUR DENTRO DO APP
+window.uploadToImgur = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    const status = document.getElementById('upload-status');
+    if(status) status.innerText = "Enviando...";
+    
+    try {
+        const url = await uploadToImgur(file); // Chama a função helper
+        document.getElementById('edit-profile-preview').src = url;
+        if(status) status.innerText = "Sucesso!";
+        // Guarda temporariamente para salvar depois
+        window.tempEditAvatarUrl = url;
+    } catch (e) {
+        if(status) status.innerText = "Erro no upload.";
+        console.error(e);
+        alert("Erro ao enviar imagem. Verifique sua conexão.");
+    }
+};
+
+window.saveProfileChanges = async function() {
+    const name = document.getElementById('edit-name').value;
+    const username = document.getElementById('edit-username').value;
+    const course = document.getElementById('edit-course').value;
+    const semester = document.getElementById('edit-semester').value;
+    // Usa a URL nova se houve upload, ou mantém a antiga
+    const avatarUrl = window.tempEditAvatarUrl || userProfileData.avatarUrl || currentUser?.photoURL;
+
+    if(!name || !username) return alert("Nome e usuário são obrigatórios.");
+
+    if(currentUser) {
+        try {
+            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), {
+                name, username, course, semester, avatarUrl, updatedAt: Date.now()
+            }, { merge: true });
+            
+            alert("Perfil atualizado com sucesso!");
+            window.navigateTo('perfil');
+        } catch(e) {
+            console.error(e);
+            alert("Erro ao salvar perfil.");
+        }
+    }
 };
 
 // --- CHAT IA & HISTÓRICO ---
@@ -645,7 +704,7 @@ window.uploadChatImage = async (input) => {
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
     try {
-        const url = await uploadToImgur(file);
+        const url = await uploadToImgur(file); // Usa a função helper corrigida
         await sendMessage(url, 'image'); 
     } catch (error) {
         console.error(error);
