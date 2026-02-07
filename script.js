@@ -27,7 +27,7 @@ let financeData = [];
 let gradesData = []; 
 let notesData = []; 
 let monthlyBudget = 0;
-let widgetStyle = 'modern';
+let widgetStyle = 'modern'; // Padrão
 let selectedColor = 'indigo';
 let activeNoteId = null;
 let noteSaveTimeout = null;
@@ -129,6 +129,19 @@ document.addEventListener('DOMContentLoaded', () => {
              signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
         });
     }
+    
+    // Configura listeners de navegação (Voltar do celular)
+    window.addEventListener('popstate', (event) => {
+        const page = event.state ? event.state.page : 'home';
+        switchView(page);
+    });
+    
+    // Seletor de estilo inicial (pode ser sobrescrito pelo firestore depois)
+    const checkModern = document.getElementById('check-modern');
+    if(checkModern) {
+        checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
+        checkModern.classList.add('bg-indigo-600', 'border-transparent');
+    }
 });
 
 window.logout = function() {
@@ -203,7 +216,12 @@ function initDataSync() {
         financeData = data.finance || [];
         monthlyBudget = data.monthlyBudget || 0;
         notesData = data.notes || [];
-        if(data.widgetStyle) setWidgetStyle(data.widgetStyle, false);
+        
+        // Atualiza o estilo do widget se vier do banco
+        if(data.widgetStyle) {
+            widgetStyle = data.widgetStyle;
+            updateWidgetStyleUI();
+        }
 
         if (typeof window.renderSchedule === 'function') window.renderSchedule();
         if (typeof window.updateNextClassWidget === 'function') window.updateNextClassWidget();
@@ -215,25 +233,35 @@ function initDataSync() {
     });
 }
 
+function updateWidgetStyleUI() {
+    document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
+    const check = document.getElementById('check-' + widgetStyle);
+    if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
+    if(window.lucide) lucide.createIcons();
+}
+
 // --- NAVEGAÇÃO ---
-window.navigateTo = (pageId) => {
+function switchView(pageId) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + pageId);
     if (target) {
         target.classList.remove('hidden');
-        window.scrollTo(0, 0);
+        window.scrollTo(0, 0); // Reseta scroll
     }
     
+    // Atualiza Header
     const titles = { 'home': 'Visão Geral', 'aulas': 'Grade', 'ia': 'Organiza IA', 'ferramentas': 'Ferramentas', 'onibus': 'Circular', 'perfil': 'Perfil', 'financeiro': 'Financeiro', 'tarefas': 'Tarefas', 'notas': 'Anotações', 'calculadora': 'Calculadora', 'pomo': 'Foco', 'sounds': 'Sons' };
     const elTitle = document.getElementById('header-title');
     if(elTitle) elTitle.innerText = titles[pageId] || 'OrganizaEdu';
 
+    // Botão Voltar (Esconde na Home)
     const backBtn = document.getElementById('back-btn');
     if(backBtn) {
         if(pageId === 'home') backBtn.classList.add('hidden');
         else backBtn.classList.remove('hidden');
     }
 
+    // Dock Mobile Highlight
     document.querySelectorAll('.mobile-nav-item').forEach(btn => {
         btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
         btn.classList.add('text-gray-400');
@@ -241,18 +269,22 @@ window.navigateTo = (pageId) => {
     
     let activeNav = pageId;
     if(['tarefas','calculadora','financeiro','notas','pomo','sounds'].includes(pageId)) activeNav = 'ferramentas';
+    if(pageId === 'edit-profile' || pageId === 'config') activeNav = 'home'; 
+
     const navBtn = document.getElementById('mob-nav-' + activeNav);
     if(navBtn) {
         navBtn.classList.remove('text-gray-400');
         navBtn.classList.add('text-indigo-600', 'dark:text-indigo-400');
     }
     
-    if(pageId === 'notas') {
-        activeNoteId = null;
-        if(typeof window.renderNotes === 'function') window.renderNotes();
-    }
-    
+    // Refresh ícones
     if(window.lucide) lucide.createIcons();
+}
+
+window.navigateTo = (pageId) => {
+    // Adiciona ao histórico do navegador (CRUCIAL PARA O BOTÃO DE VOLTAR DO ANDROID/IOS)
+    history.pushState({ page: pageId }, null, `#${pageId}`);
+    switchView(pageId);
 };
 
 // --- CHAT IA ---
@@ -263,11 +295,14 @@ window.setAIProvider = function(provider) {
     
     if(provider === 'gemini') {
         btnGemini.classList.add('bg-indigo-600', 'text-white');
-        btnGemini.classList.remove('bg-white', 'text-indigo-600');
+        btnGemini.classList.remove('bg-white', 'dark:bg-slate-700', 'text-indigo-600');
         btnGroq.classList.remove('bg-indigo-600', 'text-white');
+        btnGroq.classList.add('text-gray-500', 'dark:text-gray-400');
     } else {
         btnGroq.classList.add('bg-indigo-600', 'text-white');
+        btnGroq.classList.remove('text-gray-500', 'dark:text-gray-400');
         btnGemini.classList.remove('bg-indigo-600', 'text-white');
+        btnGemini.classList.add('bg-white', 'dark:bg-slate-700', 'text-indigo-600');
     }
 }
 
@@ -332,7 +367,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
         } catch (error) {
             console.error("Erro IA:", error);
             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: "Erro de conexão com a IA. Tente novamente.", role: 'ai', type: 'text', timestamp: Date.now() + 100
+                text: "Erro ao conectar. Verifique se as chaves da API estão configuradas na Vercel.", role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }
     }
@@ -561,11 +596,7 @@ async function saveData() {
 window.setWidgetStyle = function(style, save = true) {
     widgetStyle = style;
     if(save) saveData();
-    
-    document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
-    const check = document.getElementById('check-' + style);
-    if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
-    
+    updateWidgetStyleUI();
     if(window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
@@ -627,17 +658,58 @@ window.updateNextClassWidget = function() {
         else if (currentMinutes >= startMins && currentMinutes < endMins) { nextClass = c; status = 'now'; break; }
     }
 
+    // --- RESTAURAÇÃO DA LÓGICA DE 2 ESTILOS (MODERNO E CLÁSSICO) ---
     if(nextClass) {
-        let timeText = status === 'now' ? 'Agora' : nextClass.start;
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-center">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 ${status === 'now' ? 'bg-green-100 text-green-600 animate-pulse' : 'bg-blue-100 text-blue-600'}">
-                    <i data-lucide="${status === 'now' ? 'play' : 'clock'}" class="w-5 h-5"></i>
+        const [hS, mS] = nextClass.start.split(':').map(Number); 
+        const startMins = hS * 60 + mS; 
+        let endMins = startMins + 60; 
+        if(nextClass.end) { const [hE, mE] = nextClass.end.split(':').map(Number); endMins = hE * 60 + mE; }
+        
+        let timeText = ""; 
+        let progressPercentage = 0;
+        
+        if(status === 'future') { 
+            const diff = startMins - currentMinutes; 
+            const dh = Math.floor(diff/60); 
+            const dm = diff%60; 
+            timeText = dh > 0 ? `Em ${dh}h ${dm}m` : `Em ${dm} min`; 
+        } else { 
+            timeText = "Agora"; 
+            const totalDuration = endMins - startMins; 
+            const elapsed = currentMinutes - startMins; 
+            progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); 
+        }
+
+        if (widgetStyle === 'classic') {
+            container.innerHTML = `
+                <div class="flex justify-between items-start w-full">
+                    <div class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-wider">${status === 'now' ? 'Em Aula' : 'Próxima'}</span>
+                    </div>
+                    <span class="text-[9px] font-bold ${status === 'now' ? 'text-green-600 bg-green-100/50 dark:bg-green-900/40' : 'text-orange-600 bg-orange-100/50 dark:bg-orange-900/40'} px-2 py-0.5 rounded-full whitespace-nowrap">${timeText}</span>
                 </div>
-                <h4 class="font-bold text-sm text-gray-800 dark:text-white line-clamp-1">${nextClass.name}</h4>
-                <p class="text-xs text-gray-500">${status === 'now' ? 'Acontecendo agora' : timeText}</p>
-            </div>
-        `;
+                <div class="mt-2 text-left w-full">
+                    <h4 class="font-bold text-sm text-gray-900 dark:text-white leading-tight mb-0.5 line-clamp-2">${nextClass.name}</h4>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-300 truncate flex items-center gap-1"><i data-lucide="user" class="w-3 h-3 inline"></i> ${nextClass.prof || 'Prof.'}</p>
+                </div>
+                <div class="w-full mt-auto">
+                    <div class="flex justify-between text-[9px] text-gray-500 dark:text-gray-400 mb-1 font-medium"><span><i data-lucide="map-pin" class="w-3 h-3 inline mr-0.5"></i>${nextClass.room}</span></div>
+                    ${status === 'now' ? `<div class="h-1 w-full bg-gray-200/50 dark:bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full transition-all duration-1000" style="width: ${progressPercentage}%"></div></div>` : `<div class="h-1 w-full bg-indigo-100/50 dark:bg-indigo-900/30 rounded-full"></div>`}
+                </div>
+            `;
+        } else {
+            // Estilo Moderno (Centralizado)
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 ${status === 'now' ? 'bg-green-100 text-green-600 animate-pulse' : 'bg-blue-100 text-blue-600'}">
+                        <i data-lucide="${status === 'now' ? 'play' : 'clock'}" class="w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-sm text-gray-800 dark:text-white line-clamp-1">${nextClass.name}</h4>
+                    <p class="text-xs text-gray-500">${status === 'now' ? 'Acontecendo agora' : timeText}</p>
+                </div>
+            `;
+        }
     } else {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center h-full text-center opacity-60">
