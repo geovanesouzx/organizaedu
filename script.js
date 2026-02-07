@@ -41,6 +41,40 @@ let selectedDonationAmount = 6.00;
 let currentPaymentId = null;
 let paymentCheckInterval = null;
 
+// PALETA DE CORES (Ajustada para funcionar com Tailwind CDN)
+const colorPalettes = {
+    indigo: { 
+        bg: 'bg-indigo-100 dark:bg-indigo-900', 
+        text: 'text-indigo-700 dark:text-indigo-200', 
+        border: 'border-l-indigo-500',
+        badge: 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200'
+    },
+    emerald: { 
+        bg: 'bg-emerald-100 dark:bg-emerald-900', 
+        text: 'text-emerald-700 dark:text-emerald-200', 
+        border: 'border-l-emerald-500',
+        badge: 'bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200'
+    },
+    orange: { 
+        bg: 'bg-orange-100 dark:bg-orange-900', 
+        text: 'text-orange-700 dark:text-orange-200', 
+        border: 'border-l-orange-500',
+        badge: 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200'
+    },
+    rose: { 
+        bg: 'bg-rose-100 dark:bg-rose-900', 
+        text: 'text-rose-700 dark:text-rose-200', 
+        border: 'border-l-rose-500',
+        badge: 'bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-200'
+    },
+    blue: { 
+        bg: 'bg-blue-100 dark:bg-blue-900', 
+        text: 'text-blue-700 dark:text-blue-200', 
+        border: 'border-l-blue-500',
+        badge: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
+    }
+};
+
 // --- UTILS IMGUR ---
 async function uploadToImgur(file) {
     const clientId = "513bb727cecf9ac"; 
@@ -73,16 +107,13 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         
-        // Verifica perfil
         const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'profile');
         const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists() && profileSnap.data().username) {
-            // USUÁRIO EXISTENTE
             initDataSync();
             loadChatMessages();
             
-            // Transição Suave
             if(loadingScreen) {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
@@ -96,7 +127,6 @@ onAuthStateChanged(auth, async (user) => {
                 }, 500);
             }
         } else {
-            // NOVO USUÁRIO -> SETUP
             if(document.getElementById('setup-name')) document.getElementById('setup-name').value = user.displayName || "";
             if(user.photoURL && document.getElementById('setup-profile-preview')) document.getElementById('setup-profile-preview').src = user.photoURL;
 
@@ -120,7 +150,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Inicialização de Listeners
 document.addEventListener('DOMContentLoaded', () => {
     const btnLogin = document.getElementById('btn-login-google');
     if(btnLogin) {
@@ -130,7 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Seletor de estilo inicial
+    // CORREÇÃO DO BOTÃO VOLTAR NATIVO (ANDROID/IOS)
+    window.addEventListener('popstate', (event) => {
+        const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
+        switchView(page, false); // false = não duplicar histórico
+    });
+    
+    // Configura o estilo inicial do widget
     const checkModern = document.getElementById('check-modern');
     if(checkModern) {
         checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
@@ -138,15 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if(window.lucide) lucide.createIcons();
-});
-
-// Listener do Botão Voltar (Global)
-window.addEventListener('popstate', (event) => {
-    // Se existe estado no evento (navegação interna), usa ele.
-    // Se não (navegação externa ou inicial), tenta ler o hash da URL.
-    // Se nada, vai para home.
-    const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
-    switchView(page);
 });
 
 window.logout = function() {
@@ -186,11 +212,10 @@ window.finishSetup = async () => {
     }
 };
 
-// --- DATA SYNC (FIRESTORE) ---
+// --- DATA SYNC ---
 function initDataSync() {
     if (!currentUser) return;
     
-    // Sync Perfil
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), (doc) => {
         if (doc.exists()) {
             const data = doc.data();
@@ -198,10 +223,8 @@ function initDataSync() {
             
             const elName = document.getElementById('profile-name');
             if(elName) elName.innerText = data.name || "Usuário";
-            
             const elUser = document.getElementById('profile-username');
             if(elUser) elUser.innerText = '@' + (data.username || "...");
-            
             const elCourse = document.getElementById('profile-course');
             if(elCourse) elCourse.innerText = `${data.course || ""} • ${data.semester || ""}`;
             
@@ -212,7 +235,6 @@ function initDataSync() {
         }
     });
 
-    // Sync Dados
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'settings'), (doc) => {
         const data = doc.exists() ? doc.data() : {};
         
@@ -244,8 +266,8 @@ function updateWidgetStyleUI() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- NAVEGAÇÃO (CORRIGIDA PARA MOBILE) ---
-function switchView(pageId) {
+// --- NAVEGAÇÃO ---
+function switchView(pageId, pushToHistory = true) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + pageId);
     if (target) {
@@ -253,19 +275,21 @@ function switchView(pageId) {
         window.scrollTo(0, 0); 
     }
     
-    // Atualiza Header
+    // Push no histórico se for navegação nova
+    if (pushToHistory) {
+        history.pushState({ page: pageId }, null, `#${pageId}`);
+    }
+
     const titles = { 'home': 'Visão Geral', 'aulas': 'Grade', 'ia': 'Organiza IA', 'ferramentas': 'Ferramentas', 'onibus': 'Circular', 'perfil': 'Perfil', 'financeiro': 'Financeiro', 'tarefas': 'Tarefas', 'notas': 'Anotações', 'calculadora': 'Calculadora', 'pomo': 'Foco', 'sounds': 'Sons' };
     const elTitle = document.getElementById('header-title');
     if(elTitle) elTitle.innerText = titles[pageId] || 'OrganizaEdu';
 
-    // Botão Voltar (Esconde na Home)
     const backBtn = document.getElementById('back-btn');
     if(backBtn) {
         if(pageId === 'home') backBtn.classList.add('hidden');
         else backBtn.classList.remove('hidden');
     }
 
-    // Dock Mobile
     document.querySelectorAll('.mobile-nav-item').forEach(btn => {
         btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
         btn.classList.add('text-gray-400');
@@ -285,15 +309,10 @@ function switchView(pageId) {
 }
 
 window.navigateTo = (pageId) => {
-    // Verifica se já estamos na página para evitar duplicar histórico
-    const currentHash = window.location.hash.replace('#', '');
-    if (currentHash === pageId) return;
-
-    history.pushState({ page: pageId }, null, `#${pageId}`);
-    switchView(pageId);
+    switchView(pageId, true);
 };
 
-// --- CHAT IA ---
+// --- CHAT IA (Com Debug de Erro) ---
 window.setAIProvider = function(provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
@@ -320,18 +339,34 @@ window.loadChatMessages = function() {
         if(!container) return;
         container.innerHTML = '';
         
-        container.innerHTML += `<div class="flex gap-3 max-w-[90%]"><div class="chat-bubble-ai p-4 rounded-2xl text-sm">Olá! Sou a <strong>Organiza IA</strong>. Como posso ajudar nos estudos hoje?</div></div>`;
+        container.innerHTML += `
+            <div class="flex gap-3 max-w-[90%] animate-message-pop">
+                <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                    Olá! Eu sou a <strong>Organiza IA</strong>. 🧠<br><br>
+                    Estou pronta para ajudar nos seus estudos!
+                </div>
+            </div>`;
 
         snapshot.forEach((doc) => {
             const msg = doc.data();
             const content = msg.type === 'image' ? `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">` : msg.text;
-            const bubbleClass = msg.role === 'user' ? 'chat-bubble-user ml-auto bg-indigo-100 text-indigo-900' : 'chat-bubble-ai bg-white/40';
             
-            container.innerHTML += `
-                <div class="flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'justify-end' : ''} mb-4 animate-fade-in">
-                    <div class="${bubbleClass} p-3.5 rounded-2xl text-sm shadow-sm break-words">${content}</div>
-                </div>
-            `;
+            if (msg.role === 'user') {
+                container.innerHTML += `
+                    <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end mb-4">
+                        <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">${content}</div>
+                        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto"><i data-lucide="user" class="w-4 h-4"></i></div>
+                    </div>`;
+            } else {
+                container.innerHTML += `
+                    <div class="flex gap-3 max-w-[85%] animate-message-pop mb-4">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20"><i data-lucide="sparkles" class="w-4 h-4"></i></div>
+                        <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">${content}</div>
+                    </div>`;
+            }
         });
         
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
@@ -350,6 +385,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
         });
 
         try {
+            // Requisição para a API na Vercel (Deve ser /api/chat)
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -359,6 +395,17 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
                     history: [] 
                 })
             });
+
+            // Verifica se a resposta é HTML (Erro 404/500 da Vercel)
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                // Se o texto começar com <, é HTML (erro da Vercel)
+                if (text.trim().startsWith('<')) {
+                    throw new Error("API não encontrada (404). Verifique se o arquivo api/chat.js foi enviado para o GitHub.");
+                }
+                throw new Error("Resposta inválida do servidor.");
+            }
 
             const data = await response.json();
             
@@ -373,9 +420,9 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             }
 
         } catch (error) {
-            console.error("Erro IA:", error);
+            console.error("Erro IA Client:", error);
             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: `Erro de conexão: ${error.message}`, role: 'ai', type: 'text', timestamp: Date.now() + 100
+                text: `Erro: ${error.message}`, role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }
     }
@@ -626,12 +673,13 @@ window.renderSchedule = function() {
         if (dayClasses.length > 0) {
             let html = `<div class="mb-4"><h3 class="text-sm font-bold text-indigo-500 uppercase mb-2 ml-1">${dayMap[dayKey]}</h3><div class="space-y-3">`;
             dayClasses.forEach(c => {
-                const style = colorPalettes[c.color] || colorPalettes.indigo;
+                // CORREÇÃO DAS CORES (USA O OBJETO MAPEADO)
+                const palette = colorPalettes[c.color] || colorPalettes.indigo;
                 html += `
-                    <div class="glass-inner p-4 rounded-xl border-l-4 ${style.border.replace('border', 'border-l-indigo-500')} relative group cursor-pointer" onclick="openEditClassModal('${c.id}')">
+                    <div class="glass-inner p-4 rounded-xl border-l-4 ${palette.border} relative group cursor-pointer" onclick="openEditClassModal('${c.id}')">
                         <div class="flex justify-between">
                             <h4 class="font-bold text-gray-800 dark:text-white">${c.name}</h4>
-                            <span class="text-xs font-bold bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 px-2 py-1 rounded">${c.start} - ${c.end}</span>
+                            <span class="text-xs font-bold ${palette.badge} px-2 py-1 rounded">${c.start} - ${c.end}</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-1">${c.room} • ${c.prof}</p>
                     </div>`;
@@ -687,7 +735,6 @@ window.updateNextClassWidget = function() {
             progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); 
         }
 
-        // Limpa classes anteriores
         container.className = "glass-panel p-4 rounded-[2rem] min-h-[9rem] flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden";
 
         if (widgetStyle === 'classic') {
@@ -732,16 +779,8 @@ window.updateNextClassWidget = function() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- GRADE CRUD (Funções Restauradas) ---
+// --- GRADE CRUD ---
 const timeSlots = ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"];
-
-const colorPalettes = {
-    indigo: { bg: 'bg-indigo-100/60 dark:bg-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-200/50 dark:border-indigo-800' },
-    emerald: { bg: 'bg-emerald-100/60 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200/50 dark:border-emerald-800' },
-    orange: { bg: 'bg-orange-100/60 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-200/50 dark:border-orange-800' },
-    rose: { bg: 'bg-rose-100/60 dark:bg-rose-900/30', text: 'text-rose-700 dark:text-rose-300', border: 'border-rose-200/50 dark:border-rose-800' },
-    blue: { bg: 'bg-blue-100/60 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200/50 dark:border-blue-800' }
-};
 
 window.openAddClassModal = function() {
     document.getElementById('modal-title').innerText = "Adicionar Aula";
@@ -830,7 +869,8 @@ function renderColorPicker() {
     container.innerHTML = Object.keys(colorPalettes).map(color => { 
         const style = colorPalettes[color]; 
         const active = selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-900 scale-110' : ''; 
-        return `<button onclick="window.setColor('${color}')" class="w-8 h-8 rounded-full ${style.bg} border ${style.border} ${active} transition hover:scale-105"></button>`; 
+        // A bolinha usa apenas o bg para mostrar a cor (extrai a primeira classe que é o bg)
+        return `<button onclick="window.setColor('${color}')" class="w-8 h-8 rounded-full ${style.bg.split(' ')[0]} border border-gray-200 ${active} transition hover:scale-105"></button>`; 
     }).join(''); 
 }
 
@@ -1464,15 +1504,6 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if(window.lucide) lucide.createIcons();
     
-    // Inicialização da Navegação Correta:
-    // Pega a página atual do hash ou usa 'home'
     const hash = window.location.hash.replace('#', '') || 'home';
-    
-    // Configura o estado inicial se não existir, sem criar nova entrada no histórico
-    // Isso garante que o botão voltar funcione corretamente desde o início
-    if (!history.state) {
-        history.replaceState({ page: hash }, null, `#${hash}`);
-    }
-    
-    switchView(hash);
+    if (window.navigateTo) window.navigateTo(hash);
 });
