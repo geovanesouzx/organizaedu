@@ -22,8 +22,9 @@ const appId = "organiza_edu_v1";
 // Variável global para armazenar dados do perfil em memória
 let userProfileData = null;
 
-// IA Provider
+// IA Provider e Histórico
 let currentAIProvider = 'gemini';
+let chatHistory = []; // Para manter o contexto da conversa
 
 // Donation
 let selectedDonationAmount = 6.00;
@@ -361,6 +362,7 @@ function renderMessage(msg, container) {
     }
 }
 
+// --- CÉREBRO DA IA: ENVIO E EXECUÇÃO DE COMANDOS ---
 window.sendMessage = async function(textOverride = null, type = 'text') {
     const input = document.getElementById('chat-input');
     const msgText = textOverride || input.value.trim();
@@ -368,33 +370,78 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     if (!textOverride) input.value = '';
 
     if(currentUser) {
-        // 1. Salva mensagem do usuário
+        // 1. Salva mensagem do usuário no Firestore
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
-        // 2. Chama API Real
+        // Adiciona ao histórico local
+        chatHistory.push({ role: 'user', text: msgText });
+        if (chatHistory.length > 10) chatHistory.shift();
+
+        // 2. Chama API Real na Vercel
         try {
-            // Histórico básico (apenas última msg por enquanto para economizar tokens, ou pode expandir)
-            const history = [{ role: 'user', text: msgText }]; 
+            // Prepara contexto para a IA
+            const now = new Date();
+            const dataHora = now.toLocaleString('pt-BR');
+            const tasksList = tasksData.map(t => `- "${t.text}"`).join('\n') || "Nenhuma tarefa.";
+            const notesList = notesData.map(n => `- "${n.title}"`).join('\n') || "Nenhuma nota.";
             
+            const systemInstructionText = `
+                VOCÊ É A "SALVE-SE IA" (OrganizaEdu). Responda APENAS com JSON.
+                Você tem controle sobre a interface.
+                Agora: ${dataHora}
+                Tarefas: ${tasksList}
+                Notas: ${notesList}
+                
+                --- COMANDOS DISPONÍVEIS ---
+                1. TAREFAS: "create_task": { "text": "...", "priority": "normal" }, "delete_task": { "text": "..." }
+                2. NOTAS: "create_note": { "title": "...", "content": "..." }
+                3. AULAS: "create_class": { "name": "...", "day": "seg", "start": "08:00", "end": "10:00", "room": "..." }
+                4. NAVEGAÇÃO: "navigate": { "page": "home/aulas/todo/notas/financeiro" }
+                5. TIMER: "timer_set": { "mode": "pomodoro/short" }
+
+                --- RESPOSTA OBRIGATÓRIA (JSON) ---
+                {
+                  "message": "Texto de resposta para o usuário (use markdown simples, sem JSON).",
+                  "commands": [ { "action": "...", "params": { ... } } ]
+                }
+            `;
+
+            let historyPayload = [{ role: 'system', text: systemInstructionText }];
+            chatHistory.forEach(msg => { historyPayload.push({ role: msg.role, text: msg.text }); });
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     provider: currentAIProvider,
                     message: msgText,
-                    history: [] // Pode-se implementar histórico completo aqui se quiser
+                    history: historyPayload
                 })
             });
 
             const data = await response.json();
             
             if (data.text) {
-                // 3. Salva resposta da IA
-                 await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                    text: data.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
-                });
+                // Limpa markdown de JSON se houver
+                let cleanText = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const responseJson = JSON.parse(cleanText);
+
+                // 3. Salva resposta da IA no Firestore
+                if (responseJson.message) {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+                        text: responseJson.message, role: 'ai', type: 'text', timestamp: Date.now() + 100
+                    });
+                    chatHistory.push({ role: 'assistant', text: responseJson.message });
+                }
+
+                // 4. Executa comandos
+                if (responseJson.commands && Array.isArray(responseJson.commands)) {
+                    for (const cmd of responseJson.commands) {
+                        executeAICommand(cmd);
+                    }
+                }
             } else {
                 throw new Error("Resposta vazia da IA");
             }
@@ -405,6 +452,61 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
                 text: "Desculpe, tive um problema técnico ao conectar com o cérebro da IA. Tente novamente.", role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }
+    }
+}
+
+// Executor de Comandos da IA
+function executeAICommand(cmd) {
+    console.log("🤖 Comando IA:", cmd.action, cmd.params);
+    const p = cmd.params || {};
+
+    switch (cmd.action) {
+        case 'create_task':
+            tasksData.push({
+                id: Date.now().toString(),
+                text: p.text,
+                done: false,
+                priority: p.priority || 'normal',
+                category: 'geral',
+                createdAt: Date.now()
+            });
+            saveData();
+            if (document.getElementById('view-todo')) window.renderTasks();
+            break;
+
+        case 'create_note':
+            const nid = Date.now().toString();
+            notesData.push({ id: nid, title: p.title || "Nota IA", content: p.content || "", updatedAt: Date.now(), pinned: false });
+            saveData();
+            navigateTo('notas');
+            setTimeout(() => openNote(nid), 500);
+            break;
+
+        case 'navigate':
+            if (p.page) navigateTo(p.page);
+            break;
+            
+        case 'timer_set':
+            if(p.mode) {
+                setTimerMode(p.mode);
+                navigateTo('pomo');
+            }
+            break;
+            
+        case 'create_class':
+             scheduleData.push({
+                id: Date.now().toString(),
+                name: p.name,
+                prof: p.prof || 'N/A',
+                room: p.room || 'N/A',
+                day: p.day || 'seg',
+                start: p.start || '08:00',
+                end: p.end || '10:00',
+                color: 'indigo'
+            });
+            saveData();
+            navigateTo('aulas');
+            break;
     }
 }
 
@@ -1039,338 +1141,6 @@ window.renderSchedule = function() {
             container.appendChild(daySection);
         }
     });
-    lucide.createIcons();
-};
-
-
-// --- TAREFAS ---
-window.openAddTaskModal = function() {
-     const modal = document.getElementById('task-modal');
-     modal.classList.remove('hidden');
-     setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
-     document.getElementById('new-task-title').value = '';
-     document.getElementById('new-task-date').value = '';
-     selectTaskCategory('estudo');
- }
-
- window.closeTaskModal = function() {
-     const modal = document.getElementById('task-modal');
-     modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
-     setTimeout(() => modal.classList.add('hidden'), 300);
- }
-
- window.selectTaskCategory = function(cat) {
-     selectedTaskCategory = cat;
-     document.querySelectorAll('.cat-btn').forEach(btn => {
-         btn.classList.add('opacity-50', 'scale-95');
-         btn.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-400');
-    });
-     const btn = document.getElementById('cat-' + cat);
-     btn.classList.remove('opacity-50', 'scale-95');
-     btn.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-400');
- }
-
- window.confirmAddTask = function() {
-     const title = document.getElementById('new-task-title').value;
-     const date = document.getElementById('new-task-date').value;
-     if(!title.trim()) return alert("Digite o título da tarefa");
-     tasksData.unshift({ id: Date.now(), text: title, category: selectedTaskCategory, date: date, done: false });
-     saveData();
-     closeTaskModal();
- }
-
-window.toggleTask = function(id) { const t = tasksData.find(x => x.id === id); if(t) { t.done = !t.done; saveData(); } }
-window.deleteTask = function(id) { tasksData = tasksData.filter(x => x.id !== id); saveData(); }
-
-window.setTaskTab = function(tab) {
-    currentTaskTab = tab;
-    const pendingBtn = document.getElementById('tab-pending');
-    const completedBtn = document.getElementById('tab-completed');
-    if(tab === 'pending') { pendingBtn.classList.add('tab-active'); pendingBtn.classList.remove('hover:bg-white/10'); completedBtn.classList.remove('tab-active'); completedBtn.classList.add('hover:bg-white/10'); } 
-    else { completedBtn.classList.add('tab-active'); completedBtn.classList.remove('hover:bg-white/10'); pendingBtn.classList.remove('tab-active'); pendingBtn.classList.add('hover:bg-white/10'); }
-    if (window.renderTasks) window.renderTasks();
-}
-
-window.renderTasks = function() {
-    const list = document.getElementById('todo-list');
-    list.innerHTML = '';
-    const total = tasksData.length;
-    const completed = tasksData.filter(t => t.done).length;
-    const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
-    document.getElementById('task-progress-bar').style.width = `${progress}%`;
-    document.getElementById('task-progress-text').innerText = `${progress}%`;
-    const filteredTasks = tasksData.filter(t => currentTaskTab === 'pending' ? !t.done : t.done);
-
-    if (filteredTasks.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 py-8 text-xs font-medium bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhuma tarefa ${currentTaskTab === 'pending' ? 'pendente' : 'concluída'}.</div>`; }
-
-    const catColors = { estudo: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800', prova: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800', trabalho: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800', pessoal: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' };
-
-    filteredTasks.forEach(t => {
-        const item = document.createElement('div');
-        item.className = `flex flex-col gap-2 p-4 glass-inner rounded-2xl ${t.done ? 'opacity-60' : ''}`;
-        const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'}) : '';
-        const badgeClass = catColors[t.category] || catColors['estudo'];
-        item.innerHTML = `
-            <div class="flex items-start gap-3">
-                <button onclick="toggleTask(${t.id})" class="mt-0.5 w-6 h-6 rounded-full border-2 ${t.done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-400 dark:border-gray-500'} flex items-center justify-center transition flex-shrink-0">
-                    ${t.done ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
-                </button>
-                <div class="flex-1 min-w-0">
-                    <span class="text-sm font-semibold ${t.done ? 'line-through text-gray-400' : 'text-gray-800 dark:text-white'} block truncate">${t.text}</span>
-                    <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border ${badgeClass}">${t.category}</span>
-                        ${dateStr ? `<span class="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 font-medium"><i data-lucide="calendar-clock" class="w-3 h-3"></i> ${dateStr}</span>` : ''}
-                    </div>
-                </div>
-                <button onclick="deleteTask(${t.id})" class="text-gray-400 hover:text-red-500 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
-        `;
-        list.appendChild(item);
-    });
-    lucide.createIcons();
-}
-
-// --- CALCULADORA CIENTÍFICA ---
-let currentInput = '0';
-let isResult = false;
-let isRadians = true;
-
-window.appendNumber = function(number) {
-    if (isResult) { currentInput = number; isResult = false; }
-    else { if (currentInput === '0' && number !== '.') currentInput = number; else currentInput += number; }
-    updateDisplay();
-}
-window.appendOperator = function(op) { isResult = false; currentInput += op; updateDisplay(); }
-window.appendConstant = function(c) {
-    if (isResult) { currentInput = ''; isResult = false; }
-    if (currentInput !== '0' && currentInput !== '') { const last = currentInput.slice(-1); if (!isNaN(last) || last === ')') currentInput += '*'; }
-    if (c === 'pi') currentInput += 'π'; if (c === 'e') currentInput += 'e';
-    updateDisplay();
-}
-window.appendFunction = function(fn) {
-     if (isResult) { currentInput = ''; isResult = false; }
-     if (currentInput === '0') currentInput = '';
-     if (currentInput.length > 0) { const last = currentInput.slice(-1); if (!isNaN(last) || last === 'π' || last === 'e' || last === ')') currentInput += '*'; }
-     currentInput += fn + '(';
-     updateDisplay();
-}
-window.clearDisplay = function() { currentInput = '0'; document.getElementById('calc-history').textContent = ''; isResult = false; updateDisplay(); }
-window.deleteLast = function() {
-     if (isResult) { clearDisplay(); return; }
-     if (currentInput.length <= 1 || currentInput === 'Error') { currentInput = '0'; } else { currentInput = currentInput.slice(0, -1); }
-     updateDisplay();
-}
-window.factorial = function(n) { if (n < 0 || !Number.isInteger(n)) return NaN; if (n === 0 || n === 1) return 1; let r = 1; for(let i=2; i<=n; i++) r *= i; return r; }
-
-window.calculate = function() {
-    try {
-        const raw = currentInput;
-        let expr = currentInput.replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E').replace(/\^/g, '**').replace(/sqrt\(/g, 'Math.sqrt(').replace(/log\(/g, 'Math.log10(').replace(/ln\(/g, 'Math.log(').replace(/%/g, '/100');
-        const sin = (x) => isRadians ? Math.sin(x) : Math.sin(x * Math.PI / 180);
-        const cos = (x) => isRadians ? Math.cos(x) : Math.cos(x * Math.PI / 180);
-        const tan = (x) => isRadians ? Math.tan(x) : Math.tan(x * Math.PI / 180);
-        const asin = (x) => isRadians ? Math.asin(x) : Math.asin(x) * 180 / Math.PI;
-        const acos = (x) => isRadians ? Math.acos(x) : Math.acos(x) * 180 / Math.PI;
-        const atan = (x) => isRadians ? Math.atan(x) : Math.atan(x) * 180 / Math.PI;
-        const fact = window.factorial;
-        const func = new Function('sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'fact', 'return ' + expr);
-        let res = func(sin, cos, tan, asin, acos, atan, fact);
-        if (!isFinite(res) || isNaN(res)) { currentInput = 'Erro'; } else { currentInput = String(parseFloat(res.toPrecision(10))); }
-        document.getElementById('calc-history').textContent = raw + ' =';
-        isResult = true;
-        updateDisplay();
-    } catch (e) { currentInput = 'Erro'; isResult = true; updateDisplay(); }
-}
-function updateDisplay() {
-    const display = document.getElementById('calc-display');
-    if(display) { display.textContent = currentInput; display.scrollLeft = display.scrollWidth; }
-}
-window.toggleCalcMode = function() {
-    isRadians = !isRadians;
-    const btn = document.getElementById('toggleMode');
-    if(btn) { btn.textContent = isRadians ? 'RAD' : 'DEG'; btn.classList.toggle('mode-active'); }
-}
-window.copyToClipboard = function() {
-    navigator.clipboard.writeText(currentInput).then(() => {
-        const tt = document.getElementById('copyTooltip');
-        if(tt) { tt.style.opacity = '1'; setTimeout(() => tt.style.opacity = '0', 1500); }
-    });
-}
-
-
-// --- FINANCEIRO 2.0 ---
-window.openAddTransactionModal = function() {
-    const modal = document.getElementById('finance-modal');
-    modal.classList.remove('hidden');
-    setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
-}
-window.closeFinanceModal = function() {
-    const modal = document.getElementById('finance-modal');
-    modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
-    setTimeout(() => modal.classList.add('hidden'), 300);
-}
-window.addTransaction = function() {
-    const desc = document.getElementById('fin-desc').value;
-    const val = parseFloat(document.getElementById('fin-val').value);
-    if(desc && val) {
-        financeData.unshift({ id: Date.now(), desc, val, date: new Date().toISOString() });
-        saveData();
-        closeFinanceModal();
-        document.getElementById('fin-desc').value = ''; document.getElementById('fin-val').value = '';
-    }
-}
-window.deleteTransaction = function(id) {
-    financeData = financeData.filter(x => x.id !== id);
-    saveData();
-}
-
-window.setMonthlyBudget = function() {
-    window.openCustomInputModal("Definir Orçamento Mensal", "Ex: 800.00", monthlyBudget.toString(), (val) => {
-        const budget = parseFloat(val.replace(',', '.'));
-        if(!isNaN(budget)) {
-            monthlyBudget = budget;
-            saveData();
-            window.showModal("Sucesso", "Orçamento atualizado!");
-        }
-    });
-}
-
-window.renderFinance = function() {
-    const list = document.getElementById('finance-list');
-    const budgetDisplay = document.getElementById('fin-budget-display');
-    const totalSpentDisplay = document.getElementById('fin-total-spent');
-    const remainingDisplay = document.getElementById('fin-remaining');
-    const progressBar = document.getElementById('fin-progress-bar');
-    
-    if (!list) return;
-    list.innerHTML = '';
-    
-    const totalSpent = financeData.reduce((acc, curr) => acc + curr.val, 0);
-    const remaining = monthlyBudget - totalSpent;
-    const percent = monthlyBudget > 0 ? Math.min(100, (totalSpent / monthlyBudget) * 100) : 0;
-
-    budgetDisplay.innerText = `R$ ${monthlyBudget.toFixed(2)}`;
-    totalSpentDisplay.innerText = `R$ ${totalSpent.toFixed(2)}`;
-    remainingDisplay.innerText = `Restante: R$ ${remaining.toFixed(2)}`;
-    progressBar.style.width = `${percent}%`;
-    
-    if(percent > 90) progressBar.className = "h-full bg-red-500 transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
-    else if(percent > 70) progressBar.className = "h-full bg-yellow-400 transition-all duration-500 shadow-[0_0_10px_rgba(250,204,21,0.5)]";
-    else progressBar.className = "h-full bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]";
-
-    if(financeData.length === 0) {
-          list.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhum gasto registrado.</div>';
-    } else {
-        financeData.forEach(t => {
-            const dateObj = new Date(t.date);
-            const dateStr = dateObj.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-            list.innerHTML += `
-                <div class="flex justify-between items-center p-3 glass-inner rounded-xl">
-                    <div>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">${t.desc}</p>
-                        <p class="text-[10px] text-gray-500">${dateStr}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-red-500 text-sm">- R$ ${t.val.toFixed(2)}</span>
-                        <button onclick="deleteTransaction(${t.id})" class="text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    lucide.createIcons();
-}
-
-// --- UTILITÁRIOS (Modais) ---
-window.showModal = function(title, message) {
-    const m = document.getElementById('generic-modal');
-    document.getElementById('generic-modal-title').innerText = title;
-    document.getElementById('generic-modal-message').innerText = message;
-    m.classList.remove('hidden');
-    setTimeout(() => { m.classList.remove('opacity-0'); m.firstElementChild.classList.remove('scale-95'); m.firstElementChild.classList.add('scale-100'); }, 10);
-}
-window.closeGenericModal = function() {
-     const m = document.getElementById('generic-modal');
-     m.classList.add('opacity-0'); m.firstElementChild.classList.remove('scale-100'); m.firstElementChild.classList.add('scale-95');
-     setTimeout(() => m.classList.add('hidden'), 300);
-}
-
-window.openCustomInputModal = function(title, placeholder, initialValue, onConfirm) {
-    const modal = document.getElementById('custom-input-modal');
-    document.getElementById('custom-modal-title').innerText = title;
-    const input = document.getElementById('custom-modal-input');
-    input.placeholder = placeholder;
-    input.value = initialValue;
-    
-    const btnConfirm = document.getElementById('custom-modal-confirm');
-    const btnCancel = document.getElementById('custom-modal-cancel');
-    const newBtnConfirm = btnConfirm.cloneNode(true);
-    const newBtnCancel = btnCancel.cloneNode(true);
-    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
-    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
-
-    newBtnConfirm.onclick = () => {
-        const val = input.value;
-        modal.classList.add('opacity-0');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-        if(onConfirm) onConfirm(val);
-    };
-    newBtnCancel.onclick = () => {
-        modal.classList.add('opacity-0');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    modal.classList.remove('hidden');
-    setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); input.focus(); }, 10);
-}
-
-// WIDGET AULA
-window.updateNextClassWidget = function() {
-    const container = document.getElementById('widget-next-class');
-    if(!container) return;
-    const now = new Date(); const daysArr = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']; const currentDay = daysArr[now.getDay()]; const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const todayClasses = scheduleData.filter(c => c.day === currentDay).sort((a, b) => parseInt(a.start.replace(':','')) - parseInt(b.start.replace(':','')));
-    let nextClass = null; let status = ""; 
-    for(let c of todayClasses) {
-        const [h, m] = c.start.split(':').map(Number); const startMins = h * 60 + m; let endMins = startMins + 60; if(c.end) { const [hE, mE] = c.end.split(':').map(Number); endMins = hE * 60 + mE; }
-        if (currentMinutes < startMins) { nextClass = c; status = 'future'; break; } else if (currentMinutes >= startMins && currentMinutes < endMins) { nextClass = c; status = 'now'; break; }
-    }
-    if(nextClass) {
-        const [hS, mS] = nextClass.start.split(':').map(Number); const startMins = hS * 60 + mS; let endMins = startMins + 60; if(nextClass.end) { const [hE, mE] = nextClass.end.split(':').map(Number); endMins = hE * 60 + mE; }
-        let timeText = ""; let progressPercentage = 0;
-        if(status === 'future') { const diff = startMins - currentMinutes; const dh = Math.floor(diff/60); const dm = diff%60; timeText = dh > 0 ? `Em ${dh}h ${dm}m` : `Em ${dm} min`; } 
-        else { timeText = "Agora"; const totalDuration = endMins - startMins; const elapsed = currentMinutes - startMins; progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); }
-
-        if (widgetStyle === 'classic') {
-            container.className = "glass-panel p-4 rounded-[2rem] h-36 flex flex-col justify-between text-left cursor-pointer transition hover:shadow-lg relative overflow-hidden group";
-            container.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-                        <span class="text-[10px] font-bold uppercase tracking-wider">${status === 'now' ? 'Em Aula' : 'Próxima'}</span>
-                    </div>
-                    <span class="text-[9px] font-bold ${status === 'now' ? 'text-green-600 bg-green-100/50 dark:bg-green-900/40' : 'text-orange-600 bg-orange-100/50 dark:bg-orange-900/40'} px-2 py-0.5 rounded-full whitespace-nowrap">${timeText}</span>
-                </div>
-                <div class="mt-1">
-                    <h4 class="font-bold text-sm text-gray-900 dark:text-white leading-tight mb-0.5 line-clamp-2">${nextClass.name}</h4>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-300 truncate flex items-center gap-1"><i data-lucide="user" class="w-3 h-3 inline"></i> ${nextClass.prof || 'Prof.'}</p>
-                </div>
-                <div class="w-full mt-auto">
-                    <div class="flex justify-between text-[9px] text-gray-500 dark:text-gray-400 mb-1 font-medium"><span><i data-lucide="map-pin" class="w-3 h-3 inline mr-0.5"></i>${nextClass.room}</span></div>
-                    ${status === 'now' ? `<div class="h-1 w-full bg-gray-200/50 dark:bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full transition-all duration-1000" style="width: ${progressPercentage}%"></div></div>` : `<div class="h-1 w-full bg-indigo-100/50 dark:bg-indigo-900/30 rounded-full"></div>`}
-                </div>
-            `;
-        } else {
-            let iconColor = "text-blue-600"; let bgIcon = "glass-inner bg-blue-100/30 dark:bg-blue-900/30";
-            if (status === 'now') { iconColor = "text-green-600"; bgIcon = "glass-inner bg-green-100/30 dark:bg-green-900/30 animate-pulse"; }
-            container.className = "glass-panel p-5 rounded-[2rem] h-36 flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden";
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><div class="w-12 h-12 ${bgIcon} ${iconColor} rounded-full flex items-center justify-center mb-2 shadow-sm transition-all"><i data-lucide="${status === 'now' ? 'play-circle' : 'clock'}" class="w-6 h-6"></i></div><h4 class="font-bold text-gray-800 dark:text-white leading-tight truncate w-full px-2 text-sm">${nextClass.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">${timeText} • ${nextClass.room}</p></div>`;
-        }
-    } else {
-        const msg = scheduleData.length === 0 ? "Adicionar Grade" : "Sem aulas hoje";
-        container.className = "glass-panel p-5 rounded-[2rem] h-36 flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden";
-        container.innerHTML = `<div class="flex flex-col items-center justify-center h-full opacity-60"><div class="w-12 h-12 glass-inner rounded-full flex items-center justify-center mb-2 text-gray-400"><i data-lucide="coffee" class="w-6 h-6"></i></div><p class="font-bold text-xs text-gray-500 dark:text-gray-400">${msg}</p></div>`;
-    }
     lucide.createIcons();
 };
 
