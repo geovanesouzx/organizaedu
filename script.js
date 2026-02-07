@@ -22,6 +22,15 @@ const appId = "organiza_edu_v1";
 // Variável global para armazenar dados do perfil em memória
 let userProfileData = null;
 
+// IA Provider
+let currentAIProvider = 'gemini';
+
+// Donation
+let selectedDonationAmount = 6.00;
+let currentPaymentId = null;
+let paymentCheckInterval = null;
+
+
 // --- IMGUR UPLOAD FUNCTION ---
 async function uploadToImgur(file) {
     const clientId = "513bb727cecf9ac"; // Client ID fornecido
@@ -217,9 +226,6 @@ function initDataSync() {
             if (window.renderTasks) window.renderTasks();
             if (window.renderFinance) window.renderFinance();
             
-            // CORREÇÃO DO BUG DO TECLADO:
-            // Só renderiza as notas se NÃO estiver editando uma nota (activeNoteId == null)
-            // Se estiver editando, o DOM já está atualizado pelo input do usuário e o Firestore apenas salva em background.
             if (window.renderNotes && !activeNoteId && document.getElementById('view-notas') && !document.getElementById('view-notas').classList.contains('hidden')) {
                 window.renderNotes();
             }
@@ -282,7 +288,25 @@ window.addEventListener('popstate', (event) => {
     switchView(page);
 });
 
-// --- CHAT SYSTEM ---
+// --- CHAT SYSTEM (COM INTEGRAÇÃO REAL) ---
+window.setAIProvider = function(provider) {
+    currentAIProvider = provider;
+    const btnGemini = document.getElementById('btn-ai-gemini');
+    const btnGroq = document.getElementById('btn-ai-groq');
+    
+    if(provider === 'gemini') {
+        btnGemini.classList.add('bg-indigo-600', 'text-white');
+        btnGemini.classList.remove('bg-white', 'dark:bg-slate-700', 'text-indigo-600');
+        btnGroq.classList.remove('bg-indigo-600', 'text-white');
+        btnGroq.classList.add('text-gray-500', 'dark:text-gray-400');
+    } else {
+        btnGroq.classList.add('bg-indigo-600', 'text-white');
+        btnGroq.classList.remove('text-gray-500', 'dark:text-gray-400');
+        btnGemini.classList.remove('bg-indigo-600', 'text-white');
+        btnGemini.classList.add('bg-white', 'dark:bg-slate-700', 'text-indigo-600');
+    }
+}
+
 window.loadChatMessages = function() {
     if(!currentUser) return;
     const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), orderBy('timestamp', 'asc'), limit(50));
@@ -296,7 +320,7 @@ window.loadChatMessages = function() {
                 </div>
                 <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
                     Olá! Eu sou a <strong>Organiza IA</strong>. 🧠<br><br>
-                    Posso te ajudar com dúvidas sobre a UFRB, horários de ônibus, ou organizar sua rotina. O que você precisa?
+                    Posso te ajudar com dúvidas sobre a UFRB, horários de ônibus, ou organizar sua rotina. Escolha o modelo acima e vamos conversar!
                 </div>
            </div>
         `;
@@ -344,23 +368,43 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     if (!textOverride) input.value = '';
 
     if(currentUser) {
+        // 1. Salva mensagem do usuário
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
-        setTimeout(async () => {
-             let response = "Desculpe, ainda estou aprendendo.";
-             const lowerMsg = msgText.toLowerCase();
-             if (type === 'image') response = "Recebi sua imagem! Ainda não consigo enxergar, mas guardei aqui.";
-             else if (lowerMsg.includes('olá') || lowerMsg.includes('oi')) response = `Olá! Como posso ajudar você hoje?`;
-             else if (lowerMsg.includes('ônibus') || lowerMsg.includes('circular')) response = `O próximo circular deve sair em breve. Verifique a aba **Circular** para horários exatos!`;
-             else if (lowerMsg.includes('horas') || lowerMsg.includes('que horas')) response = `Agora são **${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}**.`;
-             else if (lowerMsg.includes('ajuda')) response = "Posso te ajudar com horários, anotações ou apenas conversar!";
-             else response = "Entendi. Vou anotar isso para você.";
 
-             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: response, role: 'ai', type: 'text', timestamp: Date.now() + 100
+        // 2. Chama API Real
+        try {
+            // Histórico básico (apenas última msg por enquanto para economizar tokens, ou pode expandir)
+            const history = [{ role: 'user', text: msgText }]; 
+            
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: currentAIProvider,
+                    message: msgText,
+                    history: [] // Pode-se implementar histórico completo aqui se quiser
+                })
             });
-        }, 1000);
+
+            const data = await response.json();
+            
+            if (data.text) {
+                // 3. Salva resposta da IA
+                 await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+                    text: data.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
+                });
+            } else {
+                throw new Error("Resposta vazia da IA");
+            }
+
+        } catch (error) {
+            console.error("Erro IA:", error);
+            await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+                text: "Desculpe, tive um problema técnico ao conectar com o cérebro da IA. Tente novamente.", role: 'ai', type: 'text', timestamp: Date.now() + 100
+            });
+        }
     }
 }
 
@@ -380,6 +424,149 @@ window.uploadChatImage = async (input) => {
         input.value = '';
     }
 };
+
+// --- SISTEMA DE DOAÇÃO (ASAAS PIX) ---
+
+window.openDonationModal = function() {
+    const modal = document.getElementById('donation-value-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => { 
+        modal.classList.remove('opacity-0'); 
+        modal.firstElementChild.classList.remove('scale-95'); 
+        modal.firstElementChild.classList.add('scale-100'); 
+    }, 10);
+    selectDonationValue(6); // Valor padrão inicial
+}
+
+window.closeDonationModal = function() {
+    const modal = document.getElementById('donation-value-modal');
+    modal.classList.add('opacity-0'); 
+    modal.firstElementChild.classList.remove('scale-100'); 
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
+
+window.selectDonationValue = function(val) {
+    selectedDonationAmount = val;
+    document.getElementById('custom-donation-input').value = ''; // Limpa custom
+    
+    // Visual feedback
+    // (Poderia adicionar classes de seleção aqui se necessário)
+}
+
+window.checkCustomValue = function() {
+    const input = document.getElementById('custom-donation-input');
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0) {
+        selectedDonationAmount = val;
+    }
+}
+
+window.proceedToCpf = function() {
+    closeDonationModal();
+    if (selectedDonationAmount < 1) return alert("Valor mínimo de R$ 1,00.");
+
+    openCustomInputModal(
+        "CPF para o PIX",
+        "Apenas números (obrigatório pelo Banco Central)",
+        "",
+        (cpfValue) => {
+            const cleanCpf = cpfValue.replace(/\D/g, '');
+            if (cleanCpf.length !== 11) {
+                return window.showModal("CPF Inválido", "Digite um CPF válido com 11 dígitos.");
+            }
+            processPaymentWithCpf(cleanCpf);
+        }
+    );
+}
+
+async function processPaymentWithCpf(cpf) {
+    const modal = document.getElementById('payment-modal');
+    const qrImg = document.getElementById('pix-qr-image');
+    const loader = document.getElementById('pix-loading');
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }, 10);
+    }
+
+    try {
+        const response = await fetch('/api/create_pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: userProfileData?.displayName || "Apoiador OrganizaEdu",
+                email: currentUser?.email || "anonimo@organizaedu.com",
+                cpf: cpf,
+                value: selectedDonationAmount // Passando o valor dinâmico se a API suportar, senão edite a API
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentPaymentId = data.id;
+
+        if (qrImg) {
+            qrImg.src = `data:image/png;base64,${data.encodedImage}`;
+            qrImg.classList.remove('opacity-50');
+        }
+        if (loader) loader.classList.add('hidden');
+
+        const copyInput = document.getElementById('pix-copy-paste');
+        if (copyInput) copyInput.value = data.payload;
+
+        if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+        paymentCheckInterval = setInterval(checkPaymentStatus, 3000);
+
+    } catch (error) {
+        console.error("Erro Pagamento:", error);
+        window.closePaymentModal();
+        window.showModal("Erro", error.message);
+    }
+}
+
+window.closePaymentModal = function() {
+    const modal = document.getElementById('payment-modal');
+    modal.classList.add('opacity-0'); 
+    modal.firstElementChild.classList.remove('scale-100'); 
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+    if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+}
+
+window.copyPixCode = function() {
+    const input = document.getElementById('pix-copy-paste');
+    input.select();
+    document.execCommand('copy');
+    alert("Código PIX copiado!");
+}
+
+async function checkPaymentStatus() {
+    if (!currentPaymentId) return;
+
+    try {
+        const response = await fetch('/api/check_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentPaymentId })
+        });
+
+        const data = await response.json();
+
+        if (data.paid) {
+            clearInterval(paymentCheckInterval);
+            window.closePaymentModal();
+            window.showModal("Pagamento Recebido! 🎉", "Muito obrigado pelo seu apoio! Você ajuda a manter o OrganizaEdu no ar.");
+        }
+    } catch (e) {
+        console.log("Verificando...", e);
+    }
+}
 
 // --- EDITAR PERFIL (CORRIGIDO PARA CARREGAR DADOS SALVOS) ---
 window.openEditProfileView = () => {
@@ -489,8 +676,6 @@ async function saveData() {
             notes: notesData
         }, { merge: true });
     }
-    // OBS: Removemos chamadas de renderização aqui que causavam o bug do teclado
-    // A renderização deve ser reativa ao input ou ao snapshot, nunca forçada no save durante a digitação.
 }
 
 window.setWidgetStyle = function(style, save = true) {
@@ -504,7 +689,7 @@ window.setWidgetStyle = function(style, save = true) {
     if (window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
-// --- SISTEMA DE NOTAS 2.0 (INTERFACE PREMIUM & CORREÇÃO DE BUG) ---
+// --- SISTEMA DE NOTAS 2.0 ---
 const noteColors = {
     yellow: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100',
     green: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
@@ -518,19 +703,14 @@ window.renderNotes = function() {
     const container = document.getElementById('view-notas');
     if(!container) return;
     
-    // MODO EDITOR (Detalhes da Nota)
     if(activeNoteId) {
         const note = notesData.find(n => n.id === activeNoteId);
         if(note) {
-            // Se não tiver cor, define padrão
             const currentColor = note.color || 'gray';
-            const colorClass = noteColors[currentColor].split(' ')[0]; // Pega só o bg para o header
-
+            
             container.innerHTML = `
                 <div class="flex flex-col h-[calc(100vh-6rem)] animate-fade-in">
                     <div class="glass-panel p-4 rounded-[1.5rem] flex-1 flex flex-col relative shadow-xl overflow-hidden transition-colors duration-500">
-                        
-                        <!-- Toolbar -->
                         <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200/30 dark:border-white/10">
                             <button onclick="closeNote()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
                             
@@ -553,7 +733,6 @@ window.renderNotes = function() {
                             </div>
                         </div>
 
-                        <!-- Editor -->
                         <input type="text" id="note-title-input" value="${note.title}" placeholder="Título da Nota" class="w-full bg-transparent text-2xl font-black outline-none placeholder-gray-400 dark:text-white mb-2" oninput="updateNoteTitle('${note.id}', this.value)">
                         <span class="text-[10px] text-gray-400 font-medium mb-4 flex items-center gap-1">
                             ${new Date(note.updatedAt).toLocaleString('pt-BR')} 
@@ -568,7 +747,6 @@ window.renderNotes = function() {
         }
     }
 
-    // MODO LISTA (Grade de Cartões)
     let html = `
         <div class="max-w-5xl mx-auto">
             <div class="glass-panel p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-lg">
@@ -586,7 +764,6 @@ window.renderNotes = function() {
     if(notesData.length === 0) {
         html += `<div class="col-span-full text-center py-10 text-gray-400 break-inside-avoid-column"><p>Nenhuma nota criada.</p></div>`;
     } else {
-        // Ordena: Fixados primeiro, depois por data de atualização
         const sortedNotes = [...notesData].sort((a,b) => {
             if (a.pinned && !b.pinned) return -1;
             if (!a.pinned && b.pinned) return 1;
@@ -617,7 +794,6 @@ window.createNote = function() {
     notesData.unshift({ id, title: '', content: '', updatedAt: Date.now(), color: 'gray', pinned: false });
     activeNoteId = id;
     saveData();
-    // Renderiza diretamente para abrir o editor
     window.renderNotes();
 }
 
@@ -637,7 +813,7 @@ window.setNoteColor = function(id, color) {
     if(note) {
         note.color = color;
         saveData();
-        window.renderNotes(); // Re-renderiza para mostrar a nova cor
+        window.renderNotes(); 
     }
 }
 
@@ -650,7 +826,6 @@ window.togglePinNote = function(id) {
     }
 }
 
-// Funções de Update (SEM RE-RENDERIZAÇÃO COMPLETA)
 window.updateNoteTitle = function(id, val) {
     const note = notesData.find(n => n.id === id);
     if(note) {
@@ -698,7 +873,6 @@ const modes = { pomodoro: 1500, short: 300, long: 900 };
 
 window.toggleTimer = function() {
     const btn = document.getElementById('btn-timer-start');
-    const icon = btn.querySelector('svg');
     
     if(isRunning) {
         clearInterval(timerInterval);

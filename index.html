@@ -272,6 +272,23 @@
 
                 <!-- 3. ORGANIZA IA (MOBILE FIXED) -->
                 <div id="view-ia" class="page-view hidden w-full h-full flex flex-col relative overflow-hidden">
+                    
+                    <!-- HEADER IA (Seletor de Modelo) -->
+                    <div class="shrink-0 flex items-center justify-between p-4 glass-panel border-b border-white/20 dark:border-white/10 z-30">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sparkles" class="text-indigo-600 dark:text-indigo-400 w-5 h-5"></i>
+                            <span class="font-black text-lg text-slate-800 dark:text-white">Organiza IA</span>
+                        </div>
+                        <div class="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
+                            <button onclick="setAIProvider('gemini')" id="btn-ai-gemini" class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all bg-white dark:bg-slate-700 text-indigo-600 shadow-sm">
+                                Gemini
+                            </button>
+                            <button onclick="setAIProvider('groq')" id="btn-ai-groq" class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                Llama 3.3
+                            </button>
+                        </div>
+                    </div>
+
                       <!-- Mensagens (FLEX GROW com overflow) -->
                       <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 hide-scroll w-full pb-0">
                           <!-- Inserido via JS -->
@@ -305,6 +322,12 @@
                     <div class="max-w-5xl mx-auto">
                         <h2 class="text-lg font-bold mb-4 text-slate-700 dark:text-white">Ferramentas de Estudo</h2>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Botão DOAR (Novo) -->
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group border-2 border-transparent hover:border-amber-400/50" onclick="openDonationModal()">
+                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-amber-500 group-hover:scale-110 transition bg-amber-100/50 dark:bg-amber-900/30"><i data-lucide="heart" class="w-7 h-7 fill-current"></i></div>
+                                <span class="font-bold text-sm text-amber-600 dark:text-amber-400">Apoiar Projeto</span>
+                            </div>
+
                             <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('calculadora')">
                                 <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-blue-500 group-hover:scale-110 transition"><i data-lucide="calculator" class="w-7 h-7"></i></div>
                                 <span class="font-bold text-sm">Calculadora</span>
@@ -637,6 +660,69 @@
         </div>
         
         <div id="generic-modal" class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"><div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center"><h3 id="generic-modal-title" class="text-lg font-bold text-slate-800 dark:text-white mb-2">Aviso</h3><p id="generic-modal-message" class="text-sm text-gray-500 dark:text-gray-400 mb-6">Mensagem</p><button onclick="closeGenericModal()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Entendi</button></div></div>
+        
+        <!-- MODAL DE DOAÇÃO/PAGAMENTO -->
+        <div id="payment-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-200 dark:border-slate-700 text-center relative">
+                <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+
+                <div class="mb-4">
+                    <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2 text-amber-500">
+                         <i data-lucide="qr-code" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Pagamento PIX</h3>
+                    <p class="text-sm text-gray-500 mt-1">Apoie o projeto instantaneamente.</p>
+                </div>
+
+                <div class="bg-white p-2 rounded-xl shadow-inner border border-gray-200 mx-auto w-48 h-48 flex items-center justify-center mb-4 relative overflow-hidden">
+                    <img id="pix-qr-image" class="w-full h-full object-contain opacity-50 transition-opacity duration-300" src="">
+                    <div id="pix-loading" class="absolute inset-0 flex items-center justify-center bg-white/80">
+                        <i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 animate-spin"></i>
+                    </div>
+                </div>
+
+                <div class="mb-4 relative group">
+                    <input type="text" id="pix-copy-paste" class="w-full text-[10px] bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-gray-500 font-mono truncate outline-none pr-10" readonly value="...">
+                     <button onclick="copyPixCode()" class="absolute right-2 top-2 p-1 text-gray-400 hover:text-indigo-600 transition">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <button onclick="copyPixCode()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95">
+                    <span>Copiar Código PIX</span>
+                </button>
+
+                <div class="flex items-center justify-center gap-2 text-xs text-gray-400 mt-4 animate-pulse">
+                    <i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Aguardando confirmação...
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL DE VALOR DE DOAÇÃO -->
+         <div id="donation-value-modal" class="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
+                <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Apoiar o Projeto ❤️</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Escolha um valor para ajudar a manter o servidor online.</p>
+                
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <button onclick="selectDonationValue(6)" class="py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition">R$ 6</button>
+                    <button onclick="selectDonationValue(15)" class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$ 15</button>
+                    <button onclick="selectDonationValue(30)" class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$ 30</button>
+                </div>
+                
+                <div class="relative mb-6">
+                    <span class="absolute left-4 top-3.5 text-gray-400 font-bold">R$</span>
+                    <input type="number" id="custom-donation-input" class="w-full input-glass rounded-xl pl-10 pr-4 py-3 outline-none text-sm font-bold" placeholder="Outro valor..." oninput="checkCustomValue()">
+                </div>
+
+                <button onclick="proceedToCpf()" id="btn-proceed-donation" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continuar
+                </button>
+                <button onclick="closeDonationModal()" class="mt-3 text-xs text-gray-400 font-bold hover:text-gray-600">Cancelar</button>
+            </div>
+        </div>
 
     </div>
 
