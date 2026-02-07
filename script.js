@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// FIREBASE CONFIG
+// FIREBASE CONFIG (Usando as chaves fornecidas)
 const firebaseConfig = {
     apiKey: "AIzaSyA3g9gmFn-Uc_SoLHsVhH7eIwgzMOYmIAQ",
     authDomain: "organizaedu.firebaseapp.com",
@@ -60,16 +60,22 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-window.loginWithGoogle = function() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            // Login bem sucedido, onAuthStateChanged vai lidar com o resto
-        }).catch((error) => {
-            console.error(error);
-            alert("Erro ao fazer login: " + error.message);
+// Listener do botão de login (precisa ser adicionado após o DOM estar pronto)
+document.addEventListener('DOMContentLoaded', () => {
+    const btnLogin = document.getElementById('btn-login-google');
+    if(btnLogin) {
+        btnLogin.addEventListener('click', () => {
+             const provider = new GoogleAuthProvider();
+             signInWithPopup(auth, provider)
+                .then((result) => {
+                    // Login bem sucedido
+                }).catch((error) => {
+                    console.error(error);
+                    alert("Erro ao fazer login: " + error.message);
+                });
         });
-}
+    }
+});
 
 window.logout = function() {
     signOut(auth).then(() => {
@@ -221,25 +227,25 @@ function renderMessage(msg, container) {
         }
         
         container.innerHTML += `
-           <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end">
-               <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">
-                   ${content}
-               </div>
-               <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto">
+            <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end">
+                <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">
+                    ${content}
+                </div>
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto">
                     <i data-lucide="user" class="w-4 h-4"></i>
-               </div>
-           </div>
+                </div>
+            </div>
         `;
     } else {
         container.innerHTML += `
-           <div class="flex gap-3 max-w-[85%] animate-message-pop">
+            <div class="flex gap-3 max-w-[85%] animate-message-pop">
                 <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
                     <i data-lucide="sparkles" class="w-4 h-4"></i>
                 </div>
                 <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">
                     ${msg.text}
                 </div>
-           </div>
+            </div>
         `;
     }
 }
@@ -282,6 +288,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     }
 }
 
+// UPLOAD PARA O CHAT COM PROXY
 window.uploadChatImage = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -289,13 +296,17 @@ window.uploadChatImage = async (input) => {
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
 
+    // Usando corsproxy.io para evitar erro de CORS
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
+    
     const formData = new FormData();
     formData.append('reqtype', 'fileupload');
-    formData.append('userhash', '307daba6918600198381c9952'); // KEY FORNECIDA
+    formData.append('userhash', '307daba6918600198381c9952'); 
     formData.append('fileToUpload', file);
 
     try {
-        const response = await fetch('https://catbox.moe/user/api.php', {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
             method: 'POST',
             body: formData
         });
@@ -308,7 +319,7 @@ window.uploadChatImage = async (input) => {
         }
     } catch (error) {
         console.error(error);
-        alert('Erro no upload.');
+        alert('Erro no upload. O servidor proxy pode estar ocupado.');
     } finally {
         status.classList.add('hidden');
         input.value = ''; // Reset input
@@ -332,14 +343,17 @@ window.openEditProfileView = () => {
 }
 window.editProfile = window.openEditProfileView;
 
-// UPLOAD CATBOX (PERFIL)
+// UPLOAD CATBOX (PERFIL) COM PROXY
 window.uploadToCatbox = async (input) => {
     const file = input.files[0];
     if (!file) return;
 
     const status = document.getElementById('upload-status');
-    status.innerText = "Enviando...";
+    status.innerText = "Enviando (Proxy)...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
+
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
 
     const formData = new FormData();
     formData.append('reqtype', 'fileupload');
@@ -347,7 +361,7 @@ window.uploadToCatbox = async (input) => {
     formData.append('fileToUpload', file);
 
     try {
-        const response = await fetch('https://catbox.moe/user/api.php', {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
             method: 'POST',
             body: formData
         });
@@ -363,7 +377,7 @@ window.uploadToCatbox = async (input) => {
         }
     } catch (error) {
         console.error(error);
-        status.innerText = "Erro no upload.";
+        status.innerText = "Erro no upload (Tente novamente).";
         status.className = "text-xs text-red-500 mt-1 font-bold";
     }
 };
@@ -714,7 +728,7 @@ window.renderSchedule = function() {
                 card.onclick = () => window.openEditClassModal(c.id);
                 
                 card.innerHTML = `
-                     <div class="flex justify-between items-start">
+                      <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-bold text-slate-800 dark:text-white text-base">${c.name}</h4>
                             <div class="flex items-center gap-2 mt-1">
@@ -727,8 +741,8 @@ window.renderSchedule = function() {
                              </p>
                              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${c.prof}</p>
                         </div>
-                     </div>
-                     <div class="absolute inset-0 bg-white/20 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none"></div>
+                      </div>
+                      <div class="absolute inset-0 bg-white/20 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none"></div>
                 `;
                 grid.appendChild(card);
             });
