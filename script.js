@@ -19,6 +19,34 @@ const db = getFirestore(app);
 let currentUser = null;
 const appId = "organiza_edu_v1"; 
 
+// --- IMGUR UPLOAD FUNCTION ---
+async function uploadToImgur(file) {
+    const clientId = "513bb727cecf9ac"; // Client ID fornecido
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+        const response = await fetch("https://api.imgur.com/3/image", {
+            method: "POST",
+            headers: {
+                Authorization: `Client-ID ${clientId}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.data.error || "Falha no upload para o Imgur");
+        }
+
+        const data = await response.json();
+        return data.data.link;
+    } catch (error) {
+        console.error("Erro Imgur:", error);
+        throw error;
+    }
+}
+
 // --- AUTH & SETUP FLOW ---
 onAuthStateChanged(auth, async (user) => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -95,8 +123,8 @@ window.logout = function() {
     }).catch((error) => console.error(error));
 }
 
-// --- SETUP SCREEN LOGIC ---
-window.uploadToCatboxSetup = async (input) => {
+// --- SETUP SCREEN LOGIC (IMGUR) ---
+window.uploadToImgurSetup = async (input) => {
     const file = input.files[0];
     if (!file) return;
 
@@ -104,34 +132,12 @@ window.uploadToCatboxSetup = async (input) => {
     status.innerText = "Enviando imagem...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
 
-    // PROXY REAL PARA POST (Usando corsproxy.io)
-    const corsProxy = 'https://corsproxy.io/?';
-    const catboxUrl = 'https://catbox.moe/user/api.php';
-
-    const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('userhash', '307daba6918600198381c9952'); 
-    formData.append('fileToUpload', file);
-
     try {
-        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const url = await response.text();
-            if(url.startsWith('http')) {
-                document.getElementById('setup-profile-preview').src = url;
-                status.innerText = "Imagem carregada com sucesso!";
-                status.className = "text-xs text-green-500 mt-1 font-bold";
-                window.tempSetupAvatarUrl = url;
-            } else {
-                throw new Error("Resposta inválida do servidor");
-            }
-        } else {
-            throw new Error('Falha no upload');
-        }
+        const url = await uploadToImgur(file);
+        document.getElementById('setup-profile-preview').src = url;
+        status.innerText = "Imagem carregada com sucesso!";
+        status.className = "text-xs text-green-500 mt-1 font-bold";
+        window.tempSetupAvatarUrl = url;
     } catch (error) {
         console.error(error);
         status.innerText = "Erro no upload. Tente novamente.";
@@ -268,7 +274,7 @@ window.addEventListener('popstate', (event) => {
     switchView(page);
 });
 
-// --- CHAT SYSTEM (COM CATBOX & FIRESTORE) ---
+// --- CHAT SYSTEM (COM IMGUR & FIRESTORE) ---
 window.loadChatMessages = function() {
     if(!currentUser) return;
     
@@ -371,7 +377,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     }
 }
 
-// UPLOAD PARA O CHAT COM PROXY
+// UPLOAD PARA O CHAT COM IMGUR
 window.uploadChatImage = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -379,41 +385,19 @@ window.uploadChatImage = async (input) => {
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
 
-    // Usando corsproxy.io para evitar erro de CORS
-    const corsProxy = 'https://corsproxy.io/?';
-    const catboxUrl = 'https://catbox.moe/user/api.php';
-    
-    const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('userhash', '307daba6918600198381c9952'); 
-    formData.append('fileToUpload', file);
-
     try {
-        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const url = await response.text();
-            if(url.startsWith('http')) {
-                await sendMessage(url, 'image'); 
-            } else {
-                throw new Error("URL inválida");
-            }
-        } else {
-            alert('Falha no upload da imagem.');
-        }
+        const url = await uploadToImgur(file);
+        await sendMessage(url, 'image'); 
     } catch (error) {
         console.error(error);
-        alert('Erro no upload. O servidor proxy pode estar ocupado.');
+        alert('Erro no upload da imagem.');
     } finally {
         status.classList.add('hidden');
         input.value = ''; // Reset input
     }
 };
 
-// --- EDITAR PERFIL & CATBOX UPLOAD (PERFIL) ---
+// --- EDITAR PERFIL & IMGUR UPLOAD (PERFIL) ---
 window.openEditProfileView = () => {
     const currentName = document.getElementById('profile-name').innerText;
     const currentUsername = document.getElementById('profile-username').innerText.replace('@', '');
@@ -430,42 +414,21 @@ window.openEditProfileView = () => {
 }
 window.editProfile = window.openEditProfileView;
 
-// UPLOAD CATBOX (PERFIL) COM PROXY
-window.uploadToCatbox = async (input) => {
+// UPLOAD IMGUR (PERFIL)
+window.uploadToImgur = async (input) => {
     const file = input.files[0];
     if (!file) return;
 
     const status = document.getElementById('upload-status');
-    status.innerText = "Enviando (Proxy)...";
+    status.innerText = "Enviando...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
 
-    const corsProxy = 'https://corsproxy.io/?';
-    const catboxUrl = 'https://catbox.moe/user/api.php';
-
-    const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('userhash', '307daba6918600198381c9952'); 
-    formData.append('fileToUpload', file);
-
     try {
-        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const url = await response.text();
-            if(url.startsWith('http')) {
-                document.getElementById('edit-profile-preview').src = url;
-                status.innerText = "Upload concluído!";
-                status.className = "text-xs text-green-500 mt-1 font-bold";
-                window.tempAvatarUrl = url;
-            } else {
-                throw new Error("URL inválida retornada");
-            }
-        } else {
-            throw new Error('Falha no upload');
-        }
+        const url = await uploadToImgur(file);
+        document.getElementById('edit-profile-preview').src = url;
+        status.innerText = "Upload concluído!";
+        status.className = "text-xs text-green-500 mt-1 font-bold";
+        window.tempAvatarUrl = url;
     } catch (error) {
         console.error(error);
         status.innerText = "Erro no upload (Tente novamente).";
@@ -485,7 +448,7 @@ window.saveProfileChanges = async () => {
 
     if(!name || !username) return alert("Nome e Usuário são obrigatórios.");
 
-    // Usa URL do Catbox se houver, senão mantém a atual ou gera nova
+    // Usa URL do Imgur se houver, senão mantém a atual ou gera nova
     let currentSrc = document.getElementById('edit-profile-preview').src;
     let avatarUrl = window.tempAvatarUrl || currentSrc;
     
@@ -1066,7 +1029,7 @@ window.renderFinance = function() {
     else progressBar.className = "h-full bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]";
 
     if(financeData.length === 0) {
-         list.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhum gasto registrado.</div>';
+          list.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhum gasto registrado.</div>';
     } else {
         financeData.forEach(t => {
             const dateObj = new Date(t.date);

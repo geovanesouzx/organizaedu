@@ -2,11 +2,10 @@
 <html lang="pt-BR" class="light">
 <head>
     <meta charset="UTF-8">
-    <!-- interactive-widget=resizes-content ajuda o teclado mobile a redimensionar a view corretamente -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>OrganizaEdu - Liquid Glass</title>
 
-    <!-- Fonte Inter e Poppins -->
+    <!-- Fontes Inter e Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@200;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Ícones Lucide -->
@@ -111,7 +110,7 @@
                         <i data-lucide="camera" class="text-white w-8 h-8"></i>
                     </div>
                 </div>
-                <input type="file" id="setup-file-upload" class="hidden" accept="image/*" onchange="uploadToCatboxSetup(this)">
+                <input type="file" id="setup-file-upload" class="hidden" accept="image/*" onchange="window.uploadToImgurSetup(this)">
                 <button onclick="document.getElementById('setup-file-upload').click()" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Escolher Foto</button>
                 <p id="setup-upload-status" class="text-[10px] text-gray-400 mt-1 h-4"></p>
             </div>
@@ -286,7 +285,7 @@
                               <button onclick="document.getElementById('chat-file-upload').click()" class="w-10 h-10 glass-inner rounded-full flex items-center justify-center text-gray-500 hover:text-indigo-600 transition active:scale-95" id="btn-upload-chat">
                                   <i data-lucide="image-plus" class="w-5 h-5"></i>
                               </button>
-                              <input type="file" id="chat-file-upload" class="hidden" accept="image/*" onchange="uploadChatImage(this)">
+                              <input type="file" id="chat-file-upload" class="hidden" accept="image/*" onchange="window.uploadChatImage(this)">
 
                               <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1 bg-transparent px-2 py-3 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400" onkeypress="if(event.key === 'Enter') sendMessage()" autocomplete="off">
                               
@@ -535,7 +534,7 @@
                                         <i data-lucide="camera" class="text-white w-8 h-8"></i>
                                     </div>
                                 </div>
-                                <input type="file" id="file-upload" class="hidden" accept="image/*" onchange="uploadToCatbox(this)">
+                                <input type="file" id="file-upload" class="hidden" accept="image/*" onchange="window.uploadToImgur(this)">
                                 <button onclick="document.getElementById('file-upload').click()" class="text-xs font-bold text-indigo-600 dark:text-indigo-400">Alterar Foto</button>
                                 <p id="upload-status" class="text-[10px] text-gray-400 mt-1"></p>
                             </div>
