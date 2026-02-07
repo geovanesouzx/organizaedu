@@ -19,16 +19,6 @@ const db = getFirestore(app);
 let currentUser = null;
 const appId = "organiza_edu_v1"; 
 
-// GLOBALS
-let scheduleData = [];
-let tasksData = [];
-let financeData = [];
-let gradesData = []; 
-let notesData = []; 
-let monthlyBudget = 0;
-let widgetStyle = 'modern';
-let currentUserProfile = {}; // Store profile data globally
-
 // --- AUTH & SETUP FLOW ---
 onAuthStateChanged(auth, async (user) => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -105,8 +95,8 @@ window.logout = function() {
     }).catch((error) => console.error(error));
 }
 
-// --- SETUP SCREEN LOGIC (IMGUR) ---
-window.uploadToImgurSetup = async (input) => {
+// --- SETUP SCREEN LOGIC ---
+window.uploadToCatboxSetup = async (input) => {
     const file = input.files[0];
     if (!file) return;
 
@@ -114,29 +104,33 @@ window.uploadToImgurSetup = async (input) => {
     status.innerText = "Enviando imagem...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
 
-    const clientId = "513bb727cecf9ac";
+    // PROXY REAL PARA POST (Usando corsproxy.io)
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
+
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', '307daba6918600198381c9952'); 
+    formData.append('fileToUpload', file);
 
     try {
-        const response = await fetch('https://api.imgur.com/3/image', {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
             method: 'POST',
-            headers: {
-                'Authorization': `Client-ID ${clientId}`
-            },
             body: formData
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            const url = data.data.link;
-            document.getElementById('setup-profile-preview').src = url;
-            status.innerText = "Imagem carregada com sucesso!";
-            status.className = "text-xs text-green-500 mt-1 font-bold";
-            window.tempSetupAvatarUrl = url;
+        if (response.ok) {
+            const url = await response.text();
+            if(url.startsWith('http')) {
+                document.getElementById('setup-profile-preview').src = url;
+                status.innerText = "Imagem carregada com sucesso!";
+                status.className = "text-xs text-green-500 mt-1 font-bold";
+                window.tempSetupAvatarUrl = url;
+            } else {
+                throw new Error("Resposta inválida do servidor");
+            }
         } else {
-            throw new Error(data.data.error || "Falha no upload");
+            throw new Error('Falha no upload');
         }
     } catch (error) {
         console.error(error);
@@ -183,8 +177,6 @@ function initDataSync() {
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), (doc) => {
         if (doc.exists()) {
             const data = doc.data();
-            currentUserProfile = data; // Save to global variable
-
             if(data.name) document.getElementById('profile-name').innerText = data.name;
             if(data.username) document.getElementById('profile-username').innerText = '@' + data.username;
             if(data.course && data.semester) document.getElementById('profile-course').innerText = `${data.course} • ${data.semester}`;
@@ -379,7 +371,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     }
 }
 
-// UPLOAD PARA O CHAT COM PROXY E IMGUR
+// UPLOAD PARA O CHAT COM PROXY
 window.uploadChatImage = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -387,86 +379,92 @@ window.uploadChatImage = async (input) => {
     const status = document.getElementById('chat-upload-status');
     status.classList.remove('hidden');
 
-    const clientId = "513bb727cecf9ac";
+    // Usando corsproxy.io para evitar erro de CORS
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
+    
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', '307daba6918600198381c9952'); 
+    formData.append('fileToUpload', file);
 
     try {
-        const response = await fetch('https://api.imgur.com/3/image', {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
             method: 'POST',
-            headers: {
-                'Authorization': `Client-ID ${clientId}`
-            },
             body: formData
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            const url = data.data.link;
-            await sendMessage(url, 'image'); 
+        if (response.ok) {
+            const url = await response.text();
+            if(url.startsWith('http')) {
+                await sendMessage(url, 'image'); 
+            } else {
+                throw new Error("URL inválida");
+            }
         } else {
-            throw new Error(data.data.error || "URL inválida");
+            alert('Falha no upload da imagem.');
         }
     } catch (error) {
         console.error(error);
-        alert('Erro no upload. Tente novamente.');
+        alert('Erro no upload. O servidor proxy pode estar ocupado.');
     } finally {
         status.classList.add('hidden');
         input.value = ''; // Reset input
     }
 };
 
-// --- EDITAR PERFIL & IMGUR UPLOAD (PERFIL) ---
+// --- EDITAR PERFIL & CATBOX UPLOAD (PERFIL) ---
 window.openEditProfileView = () => {
-    // Agora preenchemos os campos com os dados reais salvos no objeto global
-    if (currentUserProfile) {
-        document.getElementById('edit-name').value = currentUserProfile.name || '';
-        document.getElementById('edit-username').value = currentUserProfile.username || '';
-        document.getElementById('edit-course').value = currentUserProfile.course || '';
-        document.getElementById('edit-semester').value = currentUserProfile.semester || '';
-    }
-    
-    // Atualiza preview da imagem
+    const currentName = document.getElementById('profile-name').innerText;
+    const currentUsername = document.getElementById('profile-username').innerText.replace('@', '');
+    const currentDesc = document.getElementById('profile-course').innerText.split(' • ');
     const currentImg = document.getElementById('profile-img').src;
+    
+    document.getElementById('edit-name').value = currentName;
+    document.getElementById('edit-username').value = currentUsername !== '@estudante' ? currentUsername : '';
+    document.getElementById('edit-course').value = currentDesc[0] !== 'Curso não informado' ? currentDesc[0] : '';
+    document.getElementById('edit-semester').value = currentDesc[1] !== '1º Semestre' ? currentDesc[1] : '';
     document.getElementById('edit-profile-preview').src = currentImg;
 
     navigateTo('edit-profile');
 }
 window.editProfile = window.openEditProfileView;
 
-// UPLOAD IMGUR (PERFIL)
-window.uploadToImgur = async (input) => {
+// UPLOAD CATBOX (PERFIL) COM PROXY
+window.uploadToCatbox = async (input) => {
     const file = input.files[0];
     if (!file) return;
 
     const status = document.getElementById('upload-status');
-    status.innerText = "Enviando (Imgur)...";
+    status.innerText = "Enviando (Proxy)...";
     status.className = "text-xs text-indigo-500 mt-1 font-bold animate-pulse";
 
-    const clientId = "513bb727cecf9ac";
+    const corsProxy = 'https://corsproxy.io/?';
+    const catboxUrl = 'https://catbox.moe/user/api.php';
+
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', '307daba6918600198381c9952'); 
+    formData.append('fileToUpload', file);
 
     try {
-        const response = await fetch('https://api.imgur.com/3/image', {
+        const response = await fetch(corsProxy + encodeURIComponent(catboxUrl), {
             method: 'POST',
-            headers: {
-                'Authorization': `Client-ID ${clientId}`
-            },
             body: formData
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            const url = data.data.link;
-            document.getElementById('edit-profile-preview').src = url;
-            status.innerText = "Upload concluído!";
-            status.className = "text-xs text-green-500 mt-1 font-bold";
-            window.tempAvatarUrl = url;
+        if (response.ok) {
+            const url = await response.text();
+            if(url.startsWith('http')) {
+                document.getElementById('edit-profile-preview').src = url;
+                status.innerText = "Upload concluído!";
+                status.className = "text-xs text-green-500 mt-1 font-bold";
+                window.tempAvatarUrl = url;
+            } else {
+                throw new Error("URL inválida retornada");
+            }
         } else {
-            throw new Error(data.data.error || "Falha no upload");
+            throw new Error('Falha no upload');
         }
     } catch (error) {
         console.error(error);
@@ -487,11 +485,10 @@ window.saveProfileChanges = async () => {
 
     if(!name || !username) return alert("Nome e Usuário são obrigatórios.");
 
-    // Usa URL do Imgur se houver, senão mantém a atual
+    // Usa URL do Catbox se houver, senão mantém a atual ou gera nova
     let currentSrc = document.getElementById('edit-profile-preview').src;
     let avatarUrl = window.tempAvatarUrl || currentSrc;
     
-    // Atualiza UI Imediatamente (Feedback Rápido)
     document.getElementById('profile-name').innerText = name;
     document.getElementById('profile-username').innerText = '@' + username;
     document.getElementById('profile-course').innerText = `${course || "Curso não informado"} • ${semester || "1º Semestre"}`;
@@ -510,6 +507,14 @@ window.saveProfileChanges = async () => {
     }
 };
 
+// GLOBALS
+let scheduleData = [];
+let tasksData = [];
+let financeData = [];
+let gradesData = []; 
+let notesData = []; 
+let monthlyBudget = 0;
+let widgetStyle = 'modern';
 let selectedColor = 'indigo';
 let classToDeleteId = null;
 let selectedTaskCategory = 'estudo';
@@ -517,7 +522,15 @@ let currentTaskTab = 'pending';
 let activeNoteId = null;
 let noteSaveTimeout = null;
 
-// ... Rest of the globals ...
+const timeSlots = ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"];
+
+const colorPalettes = {
+    indigo: { bg: 'bg-indigo-100/60 dark:bg-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-200/50 dark:border-indigo-800' },
+    emerald: { bg: 'bg-emerald-100/60 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200/50 dark:border-emerald-800' },
+    orange: { bg: 'bg-orange-100/60 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-200/50 dark:border-orange-800' },
+    rose: { bg: 'bg-rose-100/60 dark:bg-rose-900/30', text: 'text-rose-700 dark:text-rose-300', border: 'border-rose-200/50 dark:border-rose-800' },
+    blue: { bg: 'bg-blue-100/60 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200/50 dark:border-blue-800' }
+};
 
 // SAVE DATA TO FIRESTORE
 async function saveData() {
