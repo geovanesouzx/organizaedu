@@ -3,8 +3,8 @@ body {
     background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 30%, #E0C3FC 60%, #8EC5FC 100%);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
-    min-height: 100vh;
-    height: 100vh; /* Garante altura fixa para evitar scroll do body */
+    min-height: 100dvh; /* Dynamic Height para Mobile */
+    height: 100dvh; 
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;
@@ -96,6 +96,7 @@ aside.fixed-sidebar {
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     border-radius: 2rem;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animação suave para esconder */
+    padding-bottom: env(safe-area-inset-bottom);
 }
 .glass-nav.hidden-nav {
     transform: translateY(200%); /* Esconde jogando para baixo */

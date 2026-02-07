@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// FIREBASE
+// FIREBASE CONFIG
 const firebaseConfig = {
     apiKey: "AIzaSyA3g9gmFn-Uc_SoLHsVhH7eIwgzMOYmIAQ",
     authDomain: "organizaedu.firebaseapp.com",
@@ -19,14 +19,63 @@ const db = getFirestore(app);
 let currentUser = null;
 const appId = "organiza_edu_v1"; 
 
+// --- AUTH & LOADING STATE ---
 onAuthStateChanged(auth, (user) => {
+    const loadingScreen = document.getElementById('loading-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const appContent = document.getElementById('app-content');
+
     if (user) {
         currentUser = user;
+        console.log("Usuário logado:", user.email);
+        
+        // Inicializa dados
         initDataSync();
+        loadChatMessages();
+
+        // UI Transition
+        setTimeout(() => {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                loginScreen.classList.add('hidden');
+                appContent.classList.remove('hidden');
+                setTimeout(() => appContent.style.opacity = '1', 10);
+            }, 500);
+        }, 1500); // Fake loading delay for beauty
+
     } else {
-        signInAnonymously(auth).catch(console.error);
+        currentUser = null;
+        console.log("Nenhum usuário logado.");
+        
+        // UI Transition
+        setTimeout(() => {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                appContent.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+            }, 500);
+        }, 1000);
     }
 });
+
+window.loginWithGoogle = function() {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            // Login bem sucedido, onAuthStateChanged vai lidar com o resto
+        }).catch((error) => {
+            console.error(error);
+            alert("Erro ao fazer login: " + error.message);
+        });
+}
+
+window.logout = function() {
+    signOut(auth).then(() => {
+        window.location.reload();
+    }).catch((error) => console.error(error));
+}
 
 // SYNC AGORA TUDO DO FIRESTORE
 function initDataSync() {
@@ -40,13 +89,20 @@ function initDataSync() {
             if(data.username) document.getElementById('profile-username').innerText = '@' + data.username;
             if(data.course && data.semester) document.getElementById('profile-course').innerText = `${data.course} • ${data.semester}`;
             
-            // Lógica da Imagem de Perfil (Prioridade: Catbox URL > UI Avatars)
-            let avatarUrl = `https://ui-avatars.com/api/?name=${data.name || 'User'}&background=6366f1&color=fff&bold=true`;
-            if(data.avatarUrl) avatarUrl = data.avatarUrl;
+            // Prioridade: Salvo > Google Photo > UI Avatar
+            let avatarUrl = data.avatarUrl || currentUser.photoURL || `https://ui-avatars.com/api/?name=${data.name || 'User'}&background=6366f1&color=fff&bold=true`;
             
             document.getElementById('profile-img').src = avatarUrl;
             document.getElementById('header-img').src = avatarUrl;
             document.getElementById('edit-profile-preview').src = avatarUrl;
+        } else {
+            // Se não tiver perfil, usa dados do Google
+            const googlePhoto = currentUser.photoURL;
+            if(googlePhoto) {
+                 document.getElementById('profile-img').src = googlePhoto;
+                 document.getElementById('header-img').src = googlePhoto;
+            }
+            document.getElementById('profile-name').innerText = currentUser.displayName || "Estudante";
         }
     });
 
@@ -123,53 +179,143 @@ window.addEventListener('popstate', (event) => {
     switchView(page);
 });
 
-// --- MOCK CHAT LOGIC ---
-window.sendMessage = function() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    const chatContainer = document.getElementById('chat-messages');
-    chatContainer.innerHTML += `
-       <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end">
-           <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm">
-               ${msg}
-           </div>
-           <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto">
-                <i data-lucide="user" class="w-4 h-4"></i>
-           </div>
-       </div>
-    `;
-    input.value = '';
-    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-
-    setTimeout(() => {
-        let response = "Desculpe, ainda estou aprendendo.";
-        const lowerMsg = msg.toLowerCase();
-        const now = new Date();
+// --- CHAT SYSTEM (COM CATBOX & FIRESTORE) ---
+window.loadChatMessages = function() {
+    if(!currentUser) return;
+    
+    // Escuta mensagens em tempo real
+    const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), orderBy('timestamp', 'asc'), limit(50));
+    
+    onSnapshot(q, (snapshot) => {
+        const chatContainer = document.getElementById('chat-messages');
+        chatContainer.innerHTML = ''; // Limpa e redesenha (poderia ser otimizado, mas ok para MVP)
         
-        if (lowerMsg.includes('olá') || lowerMsg.includes('oi')) response = `Olá! Como posso ajudar você hoje?`;
-        else if (lowerMsg.includes('ônibus') || lowerMsg.includes('circular')) response = `O próximo circular deve sair em breve. Verifique a aba **Circular** para horários exatos!`;
-        else if (lowerMsg.includes('horas') || lowerMsg.includes('que horas')) response = `Agora são **${now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}**.`;
-        else if (lowerMsg.includes('ajuda')) response = "Posso te ajudar com horários, anotações ou apenas conversar!";
-        else response = "Entendi. Vou anotar isso para você.";
-
+        // Mensagem de boas vindas padrão
         chatContainer.innerHTML += `
+            <div class="flex gap-3 max-w-[90%] animate-message-pop">
+                <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                    Olá! Eu sou a <strong>Organiza IA</strong>. 🧠<br><br>
+                    Posso te ajudar com dúvidas sobre a UFRB, horários de ônibus, ou organizar sua rotina. O que você precisa?
+                </div>
+           </div>
+        `;
+
+        snapshot.forEach((doc) => {
+            const msg = doc.data();
+            renderMessage(msg, chatContainer);
+        });
+
+        lucide.createIcons();
+        chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+    });
+}
+
+function renderMessage(msg, container) {
+    if (msg.role === 'user') {
+        let content = msg.text;
+        if(msg.type === 'image') {
+            content = `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">`;
+        }
+        
+        container.innerHTML += `
+           <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end">
+               <div class="chat-bubble-user p-3.5 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm break-words">
+                   ${content}
+               </div>
+               <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 mt-auto">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+               </div>
+           </div>
+        `;
+    } else {
+        container.innerHTML += `
            <div class="flex gap-3 max-w-[85%] animate-message-pop">
                 <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
                     <i data-lucide="sparkles" class="w-4 h-4"></i>
                 </div>
-                <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm">
-                    ${response}
+                <div class="chat-bubble-ai p-3.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm break-words">
+                    ${msg.text}
                 </div>
            </div>
         `;
-        lucide.createIcons();
-        chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-    }, 1000);
+    }
 }
 
-// --- EDITAR PERFIL & CATBOX UPLOAD ---
+window.sendMessage = async function(textOverride = null, type = 'text') {
+    const input = document.getElementById('chat-input');
+    const msgText = textOverride || input.value.trim();
+    if (!msgText) return;
+
+    if (!textOverride) input.value = '';
+
+    if(currentUser) {
+        // Salva no Firestore (o onSnapshot vai desenhar na tela)
+        await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+            text: msgText,
+            role: 'user',
+            type: type,
+            timestamp: Date.now()
+        });
+
+        // Simula resposta da IA (Mock)
+        setTimeout(async () => {
+             let response = "Desculpe, ainda estou aprendendo.";
+             const lowerMsg = msgText.toLowerCase();
+             
+             if (type === 'image') response = "Recebi sua imagem! Ainda não consigo enxergar, mas guardei aqui.";
+             else if (lowerMsg.includes('olá') || lowerMsg.includes('oi')) response = `Olá! Como posso ajudar você hoje?`;
+             else if (lowerMsg.includes('ônibus') || lowerMsg.includes('circular')) response = `O próximo circular deve sair em breve. Verifique a aba **Circular** para horários exatos!`;
+             else if (lowerMsg.includes('horas') || lowerMsg.includes('que horas')) response = `Agora são **${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}**.`;
+             else if (lowerMsg.includes('ajuda')) response = "Posso te ajudar com horários, anotações ou apenas conversar!";
+             else response = "Entendi. Vou anotar isso para você.";
+
+             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
+                text: response,
+                role: 'ai',
+                type: 'text',
+                timestamp: Date.now() + 100 // Garante que vem depois
+            });
+        }, 1000);
+    }
+}
+
+window.uploadChatImage = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const status = document.getElementById('chat-upload-status');
+    status.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('userhash', '307daba6918600198381c9952'); // KEY FORNECIDA
+    formData.append('fileToUpload', file);
+
+    try {
+        const response = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const url = await response.text();
+            await sendMessage(url, 'image'); // Envia como mensagem do tipo imagem
+        } else {
+            alert('Falha no upload da imagem.');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Erro no upload.');
+    } finally {
+        status.classList.add('hidden');
+        input.value = ''; // Reset input
+    }
+};
+
+// --- EDITAR PERFIL & CATBOX UPLOAD (PERFIL) ---
 window.openEditProfileView = () => {
     const currentName = document.getElementById('profile-name').innerText;
     const currentUsername = document.getElementById('profile-username').innerText.replace('@', '');
@@ -186,7 +332,7 @@ window.openEditProfileView = () => {
 }
 window.editProfile = window.openEditProfileView;
 
-// UPLOAD CATBOX
+// UPLOAD CATBOX (PERFIL)
 window.uploadToCatbox = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -197,7 +343,7 @@ window.uploadToCatbox = async (input) => {
 
     const formData = new FormData();
     formData.append('reqtype', 'fileupload');
-    formData.append('userhash', '307daba6918600198381c9952'); // KEY FORNECIDA
+    formData.append('userhash', '307daba6918600198381c9952'); 
     formData.append('fileToUpload', file);
 
     try {
@@ -211,8 +357,6 @@ window.uploadToCatbox = async (input) => {
             document.getElementById('edit-profile-preview').src = url;
             status.innerText = "Upload concluído!";
             status.className = "text-xs text-green-500 mt-1 font-bold";
-            
-            // Salvar temporariamente no objeto para quando clicar em Salvar
             window.tempAvatarUrl = url;
         } else {
             throw new Error('Falha no upload');
@@ -232,13 +376,13 @@ window.saveProfileChanges = async () => {
 
     if(!name || !username) return alert("Nome e Usuário são obrigatórios.");
 
+    // Usa URL do Catbox se houver, senão mantém a atual ou gera nova
+    let currentSrc = document.getElementById('edit-profile-preview').src;
+    let avatarUrl = window.tempAvatarUrl || currentSrc;
+    
     document.getElementById('profile-name').innerText = name;
     document.getElementById('profile-username').innerText = '@' + username;
     document.getElementById('profile-course').innerText = `${course || "Curso não informado"} • ${semester || "1º Semestre"}`;
-    
-    // Usa URL do Catbox se houver, senão gera avatar
-    let avatarUrl = window.tempAvatarUrl || `https://ui-avatars.com/api/?name=${name}&background=6366f1&color=fff&bold=true`;
-    
     document.getElementById('profile-img').src = avatarUrl;
     document.getElementById('header-img').src = avatarUrl;
 
