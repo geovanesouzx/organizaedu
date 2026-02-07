@@ -1,6 +1,5 @@
-// api/chat.js
 export default async function handler(req, res) {
-    // Permite CORS (acesso de qualquer origem ou configure seu domínio)
+    // Configuração de CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -16,8 +15,6 @@ export default async function handler(req, res) {
     }
 
     const { provider, message, history } = req.body;
-
-    // As chaves devem estar configuradas nas Variáveis de Ambiente da Vercel
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const GROQ_KEY = process.env.GROQ_API_KEY;
 
@@ -26,10 +23,12 @@ export default async function handler(req, res) {
 
         // --- GEMINI (GOOGLE) ---
         if (provider === 'gemini') {
+            if (!GEMINI_KEY) throw new Error("API Key do Gemini não configurada.");
+
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
             
             let contents = [];
-            if (history) {
+            if (history && Array.isArray(history)) {
                 history.forEach(msg => {
                     contents.push({ 
                         role: msg.role === 'user' ? 'user' : 'model', 
@@ -44,20 +43,25 @@ export default async function handler(req, res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: contents,
-                    generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
+                    generationConfig: { temperature: 0.7 }
                 })
             });
 
             const data = await response.json();
+            
             if (data.error) throw new Error(data.error.message);
+            if (!data.candidates || !data.candidates[0].content) throw new Error("Gemini não retornou resposta válida.");
+            
             resultText = data.candidates[0].content.parts[0].text;
 
         // --- GROQ (LLAMA) ---
         } else {
+            if (!GROQ_KEY) throw new Error("API Key do Groq não configurada.");
+
             const url = "https://api.groq.com/openai/v1/chat/completions";
             
             let messages = [];
-            if (history) {
+            if (history && Array.isArray(history)) {
                 history.forEach(msg => {
                     messages.push({ role: msg.role, content: msg.text });
                 });
@@ -73,8 +77,7 @@ export default async function handler(req, res) {
                 body: JSON.stringify({
                     model: "llama-3.3-70b-versatile",
                     messages: messages,
-                    temperature: 0.6,
-                    response_format: { type: "json_object" }
+                    temperature: 0.6
                 })
             });
 
@@ -86,7 +89,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ text: resultText });
 
     } catch (error) {
-        console.error("Erro na API Vercel:", error);
-        return res.status(500).json({ error: error.message });
+        console.error("Erro na API de Chat:", error);
+        return res.status(500).json({ error: error.message || "Erro interno no servidor de IA." });
     }
 }

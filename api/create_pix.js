@@ -1,5 +1,5 @@
-// api/create_pix.js
 export default async function handler(req, res) {
+    // Configuração de CORS padrão
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -10,40 +10,63 @@ export default async function handler(req, res) {
         return;
     }
 
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-
-    // Agora aceita 'value' dinamicamente do frontend
-    const { email, name, cpf, value } = req.body; 
-    const apiKey = process.env.ASAAS_API_KEY; 
-
-    if (!apiKey) {
-        return res.status(500).json({ error: 'API Key do Asaas não configurada na Vercel.' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
-        // 1. Criar/Buscar Cliente
-        const customerResponse = await fetch('https://api.asaas.com/v3/customers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'access_token': apiKey
-            },
-            body: JSON.stringify({
-                name: name || "Apoiador OrganizaEdu",
-                email: email || "doacao@organizaedu.com",
-                cpfCnpj: cpf // CPF obrigatório para Pix no Asaas
-            })
-        });
-        
-        const customerData = await customerResponse.json();
-        
-        if (!customerData.id) {
-            const errorMsg = customerData.errors ? customerData.errors[0].description : 'Erro ao cadastrar cliente';
-            throw new Error(`Asaas Cliente: ${errorMsg}`);
+        const { email, name, cpf, value } = req.body;
+        const apiKey = process.env.ASAAS_API_KEY;
+
+        if (!apiKey) {
+            console.error("API Key do Asaas não encontrada");
+            return res.status(500).json({ error: 'Configuração de servidor inválida (API Key ausente).' });
         }
 
-        // 2. Criar a Cobrança com valor dinâmico
-        const paymentValue = parseFloat(value) || 6.00; // Fallback para 6.00 se der erro
+        // 1. Limpeza e Validação
+        const cleanCpf = cpf.replace(/\D/g, ''); // Remove tudo que não for número
+        if (cleanCpf.length !== 11) {
+            return res.status(400).json({ error: 'CPF inválido. Envie apenas números.' });
+        }
+
+        // 2. Buscar se o cliente já existe no Asaas (Evita erro de duplicidade)
+        let customerId = null;
+
+        const searchResponse = await fetch(`https://api.asaas.com/v3/customers?cpfCnpj=${cleanCpf}`, {
+            method: 'GET',
+            headers: { 'access_token': apiKey }
+        });
+        
+        const searchData = await searchResponse.json();
+        
+        if (searchData.data && searchData.data.length > 0) {
+            // Cliente já existe, usa o ID dele
+            customerId = searchData.data[0].id;
+        } else {
+            // 3. Cliente não existe, cria um novo
+            const createCustomerResponse = await fetch('https://api.asaas.com/v3/customers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'access_token': apiKey
+                },
+                body: JSON.stringify({
+                    name: name || "Apoiador OrganizaEdu",
+                    email: email || "anonimo@organizaedu.com",
+                    cpfCnpj: cleanCpf
+                })
+            });
+
+            const newCustomerData = await createCustomerResponse.json();
+            
+            if (!newCustomerData.id) {
+                // Se der erro ao criar, pega a mensagem
+                const errorMsg = newCustomerData.errors ? newCustomerData.errors[0].description : 'Erro desconhecido ao cadastrar cliente';
+                throw new Error(`Asaas Cliente: ${errorMsg}`);
+            }
+            customerId = newCustomerData.id;
+        }
+
+        // 4. Criar a Cobrança
+        const paymentValue = parseFloat(value) || 6.00;
 
         const paymentResponse = await fetch('https://api.asaas.com/v3/payments', {
             method: 'POST',
@@ -52,10 +75,10 @@ export default async function handler(req, res) {
                 'access_token': apiKey
             },
             body: JSON.stringify({
-                customer: customerData.id,
+                customer: customerId,
                 billingType: "PIX",
                 value: paymentValue,
-                dueDate: new Date().toISOString().split('T')[0], 
+                dueDate: new Date().toISOString().split('T')[0], // Vence hoje
                 description: "Apoio ao Projeto OrganizaEdu"
             })
         });
@@ -67,13 +90,17 @@ export default async function handler(req, res) {
             throw new Error(`Asaas Pagamento: ${errorMsg}`);
         }
 
-        // 3. Pegar QR Code
+        // 5. Obter o QR Code e o Payload (Copia e Cola)
         const qrResponse = await fetch(`https://api.asaas.com/v3/payments/${paymentData.id}/pixQrCode`, {
             method: 'GET',
             headers: { 'access_token': apiKey }
         });
 
         const qrData = await qrResponse.json();
+
+        if (!qrData.encodedImage) {
+            throw new Error("Não foi possível gerar o QR Code Pix no momento.");
+        }
 
         res.status(200).json({
             id: paymentData.id,
@@ -82,7 +109,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Erro Backend:", error);
+        console.error("Erro Backend Pix:", error);
         res.status(500).json({ error: error.message });
     }
 }
