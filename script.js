@@ -142,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
         checkModern.classList.add('bg-indigo-600', 'border-transparent');
     }
+    
+    if(window.lucide) lucide.createIcons();
 });
 
 window.logout = function() {
@@ -240,7 +242,7 @@ function updateWidgetStyleUI() {
     if(window.lucide) lucide.createIcons();
 }
 
-// --- NAVEGAÇÃO ---
+// --- NAVEGAÇÃO (CORRIGIDA) ---
 function switchView(pageId) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + pageId);
@@ -287,7 +289,7 @@ window.navigateTo = (pageId) => {
     switchView(pageId);
 };
 
-// --- CHAT IA ---
+// --- CHAT IA (CORRIGIDO) ---
 window.setAIProvider = function(provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
@@ -344,18 +346,24 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
         });
 
         try {
+            // Chamada à API da Vercel
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     provider: currentAIProvider,
                     message: msgText,
-                    history: [] 
+                    history: [] // Pode adicionar histórico se quiser
                 })
             });
 
             const data = await response.json();
             
+            if (!response.ok) {
+                // Erro HTTP (ex: 500 ou 400)
+                throw new Error(data.error || "Erro na resposta da API");
+            }
+
             if (data.text) {
                  await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
                     text: data.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
@@ -365,9 +373,9 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             }
 
         } catch (error) {
-            console.error("Erro IA:", error);
+            console.error("Erro IA Client:", error);
             await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'messages'), {
-                text: "Erro ao conectar. Verifique se as chaves da API estão configuradas na Vercel.", role: 'ai', type: 'text', timestamp: Date.now() + 100
+                text: `Erro: ${error.message}. Verifique as chaves na Vercel.`, role: 'ai', type: 'text', timestamp: Date.now() + 100
             });
         }
     }
@@ -390,7 +398,7 @@ window.uploadChatImage = async (input) => {
     }
 };
 
-// --- SISTEMA DE DOAÇÃO (CORRIGIDO) ---
+// --- SISTEMA DE DOAÇÃO ---
 window.openDonationModal = function() {
     const modal = document.getElementById('donation-value-modal');
     modal.classList.remove('hidden');
@@ -596,7 +604,11 @@ async function saveData() {
 window.setWidgetStyle = function(style, save = true) {
     widgetStyle = style;
     if(save) saveData();
-    updateWidgetStyleUI();
+    
+    document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
+    const check = document.getElementById('check-' + style);
+    if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
+    
     if(window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
@@ -680,7 +692,11 @@ window.updateNextClassWidget = function() {
             progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); 
         }
 
+        // Limpa classes anteriores
+        container.className = "glass-panel p-4 rounded-[2rem] min-h-[9rem] flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden";
+
         if (widgetStyle === 'classic') {
+            container.className = "glass-panel p-4 rounded-[2rem] min-h-[9rem] flex flex-col justify-between text-left cursor-pointer transition hover:shadow-lg relative overflow-hidden group";
             container.innerHTML = `
                 <div class="flex justify-between items-start w-full">
                     <div class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">

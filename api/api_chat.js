@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-    // Configuração de CORS
+    // Configuração de CORS para permitir acesso do seu frontend
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
         // --- GEMINI (GOOGLE) ---
         if (provider === 'gemini') {
-            if (!GEMINI_KEY) throw new Error("API Key do Gemini não configurada.");
+            if (!GEMINI_KEY) throw new Error("Chave API Gemini não configurada na Vercel.");
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
             
@@ -49,14 +49,14 @@ export default async function handler(req, res) {
 
             const data = await response.json();
             
-            if (data.error) throw new Error(data.error.message);
-            if (!data.candidates || !data.candidates[0].content) throw new Error("Gemini não retornou resposta válida.");
+            if (data.error) throw new Error(`Erro Gemini: ${data.error.message}`);
+            if (!data.candidates || !data.candidates[0].content) throw new Error("Gemini retornou resposta vazia.");
             
             resultText = data.candidates[0].content.parts[0].text;
 
         // --- GROQ (LLAMA) ---
         } else {
-            if (!GROQ_KEY) throw new Error("API Key do Groq não configurada.");
+            if (!GROQ_KEY) throw new Error("Chave API Groq não configurada na Vercel.");
 
             const url = "https://api.groq.com/openai/v1/chat/completions";
             
@@ -82,14 +82,14 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
+            if (data.error) throw new Error(`Erro Groq: ${data.error.message}`);
             resultText = data.choices[0].message.content;
         }
 
         return res.status(200).json({ text: resultText });
 
     } catch (error) {
-        console.error("Erro na API de Chat:", error);
-        return res.status(500).json({ error: error.message || "Erro interno no servidor de IA." });
+        console.error("API Chat Error:", error);
+        return res.status(500).json({ error: error.message || "Erro interno do servidor." });
     }
 }
