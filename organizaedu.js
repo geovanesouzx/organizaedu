@@ -8,12 +8,12 @@ export class OrganizaIA {
         if (!text) return "";
         let formatted = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrito
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Itálico
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Itálico
             .replace(/\n/g, '<br>');                           // Quebra de linha
         return formatted;
     }
 
-    async processMessage(userText, contextData, provider) {
+    async processMessage(userText, contextData, provider, history) {
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -22,7 +22,7 @@ export class OrganizaIA {
                     provider: provider,
                     message: userText,
                     context: contextData,
-                    history: [] 
+                    history: history 
                 })
             });
 
@@ -82,6 +82,22 @@ export class OrganizaIA {
                 break;
             case 'create_transaction':
                 if (this.callbacks.addTransaction) this.callbacks.addTransaction(data);
+                break;
+            // NOVOS COMANDOS
+            case 'create_note':
+                if (this.callbacks.createNote) this.callbacks.createNote(data);
+                break;
+            case 'control_timer':
+                if (this.callbacks.controlTimer) this.callbacks.controlTimer(data);
+                break;
+            case 'add_grade':
+                if (this.callbacks.addGrade) this.callbacks.addGrade(data);
+                break;
+            case 'change_theme':
+                if (this.callbacks.changeTheme) this.callbacks.changeTheme(data);
+                break;
+            case 'set_style':
+                if (this.callbacks.setWidgetStyle) this.callbacks.setWidgetStyle(data);
                 break;
             default:
                 console.warn("Ação desconhecida da IA:", type);

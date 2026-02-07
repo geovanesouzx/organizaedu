@@ -105,6 +105,61 @@ const AI_Actions = {
         });
         saveData();
         window.renderFinance();
+    },
+    // --- NOVAS FUNÇÕES ---
+    createNote: (data) => {
+        const newNote = {
+            id: Date.now().toString(),
+            title: data.title || "Nota Rápida",
+            content: data.content || "",
+            updatedAt: Date.now(),
+            color: 'blue',
+            pinned: false
+        };
+        notesData.unshift(newNote);
+        saveData();
+        if (window.renderNotes) window.renderNotes();
+        // Feedback visual sutil se não estiver na tela de notas
+        const btn = document.getElementById('mob-nav-ferramentas');
+        if(btn) {
+            btn.classList.add('animate-bounce');
+            setTimeout(() => btn.classList.remove('animate-bounce'), 1000);
+        }
+    },
+    controlTimer: (data) => {
+        // data: { action: 'start'|'stop', mode: 'pomodoro'|'short'|'long' }
+        if (data.mode && window.setTimerMode) window.setTimerMode(data.mode);
+        
+        // Verifica estado atual através do botão (gambiarra visual robusta)
+        const btn = document.getElementById('btn-timer-start');
+        const isCurrentlyRunning = btn && btn.innerHTML.includes('pause');
+        
+        if (data.action === 'start' && !isCurrentlyRunning) {
+            if(window.toggleTimer) window.toggleTimer();
+        } else if (data.action === 'stop' && isCurrentlyRunning) {
+            if(window.toggleTimer) window.toggleTimer();
+        }
+    },
+    addGrade: (data) => {
+        // data: { subject, value, name }
+        gradesData.push({
+            id: Date.now(),
+            subject: data.subject || "Geral",
+            value: parseFloat(data.value),
+            name: data.name || "Atividade",
+            date: Date.now()
+        });
+        saveData();
+        window.showModal("Nota Salva 🎓", `Nota ${data.value} adicionada em ${data.subject}.`);
+    },
+    changeTheme: (data) => {
+        // data: { mode: 'dark' | 'light' }
+        const isDark = document.documentElement.classList.contains('dark');
+        if (data.mode === 'dark' && !isDark) document.documentElement.classList.add('dark');
+        else if (data.mode === 'light' && isDark) document.documentElement.classList.remove('dark');
+    },
+    setWidgetStyle: (data) => {
+        if(window.setWidgetStyle) window.setWidgetStyle(data.style);
     }
 };
 
@@ -285,6 +340,7 @@ function initDataSync() {
         financeData = data.finance || [];
         monthlyBudget = data.monthlyBudget || 0;
         notesData = data.notes || [];
+        gradesData = data.grades || [];
         
         if(data.widgetStyle) {
             widgetStyle = data.widgetStyle;
@@ -393,38 +449,21 @@ function initChatSystem() {
             `;
         });
     });
-
-    // 2. Tentar carregar a última conversa ou criar nova
-    // Se já estiver na tela de IA, carrega, senão espera o clique
 }
 
 window.startNewChat = async function() {
     if (!currentUser) return;
-    
-    // Cria um ID único para a nova thread
     activeChatId = Date.now().toString();
-    
-    // Limpa a tela
     const container = document.getElementById('chat-messages');
     if (container) container.innerHTML = '';
-    
-    // Adiciona mensagem inicial
     addWelcomeMessage();
-    
-    // Reseta memória local
     currentChatHistory = [];
-    
-    // Fecha o drawer se estiver aberto
     window.toggleHistory(false);
-    
-    // Cria o documento da thread no Firestore
     await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId), {
         title: 'Nova Conversa',
         createdAt: Date.now(),
         updatedAt: Date.now()
     });
-
-    // Inicia listener para esta nova thread
     listenToActiveChat();
 }
 
@@ -433,7 +472,6 @@ window.loadChatSession = function(chatId) {
         window.toggleHistory(false);
         return;
     }
-    
     activeChatId = chatId;
     currentChatHistory = [];
     listenToActiveChat();
@@ -460,7 +498,7 @@ function addWelcomeMessage() {
             </div>
             <div class="chat-bubble-ai p-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
                 Olá! Eu sou a <strong>OrganizaEdu</strong>. 🧠<br><br>
-                Posso <strong>criar tarefas</strong>, <strong>adicionar aulas</strong> e tirar suas dúvidas. O que vamos organizar hoje?
+                Posso <strong>criar notas</strong>, <strong>iniciar o timer</strong>, adicionar aulas e muito mais. Como posso ajudar?
             </div>
         </div>`;
 }
@@ -476,17 +514,12 @@ function listenToActiveChat() {
         const container = document.getElementById('chat-messages');
         if (!container) return;
         
-        // Se for a primeira vez carregando e estiver vazio, mostra boas-vindas
         if (snapshot.empty && container.innerHTML.trim() === '') {
             addWelcomeMessage();
             return;
         }
 
-        // Limpa e reconstrói (para garantir ordem e evitar duplicação em lógica simples)
-        // Em app real, faríamos append inteligente, mas aqui simplificamos
         if (!snapshot.empty) container.innerHTML = ''; 
-
-        // Atualiza histórico local para contexto da IA
         currentChatHistory = [];
 
         snapshot.forEach((doc) => {
@@ -512,8 +545,6 @@ function listenToActiveChat() {
         });
         
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-        
-        // Atualiza ícones
         if(window.lucide) lucide.createIcons();
     });
 }
@@ -540,10 +571,8 @@ window.setAIProvider = function(provider) {
 window.sendMessage = async function(textOverride = null, type = 'text') {
     if (!currentUser) return;
     
-    // Se não tiver chat ativo, cria um
     if (!activeChatId) {
         await startNewChat();
-        // Pequeno delay para garantir que o listener ativou
         await new Promise(r => setTimeout(r, 100));
     }
 
@@ -553,12 +582,10 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     if (!textOverride) input.value = '';
 
     if(organizaIA) {
-        // 1. Salva mensagem do usuário na subcoleção da thread
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
         
-        // Atualiza título da thread se for a primeira mensagem e data de atualização
         const threadRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId);
         if (currentChatHistory.length < 2) {
              await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
@@ -566,29 +593,48 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
              await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
         }
 
-        // 2. Prepara o contexto
+        // Prepara dados do ônibus para a IA ter consciência
+        const nextBusInfo = getNextBusForContext();
+
         const userContext = {
             profile: userProfileData,
             schedule: scheduleData,
             tasks: tasksData,
             finance: financeData,
             notes: notesData,
+            grades: gradesData,
+            busStatus: nextBusInfo,
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
         
-        // CORREÇÃO: Limita o histórico enviado para a API (Últimas 10 mensagens apenas)
-        // Isso evita o erro de "payload too large" ou travamento
         const limitedHistory = currentChatHistory.slice(-10);
 
-        // 3. Processa
         const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider, limitedHistory);
 
-        // 4. Salva resposta da IA
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: result.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
         });
     }
+}
+
+// HELPER: Extrai dados do ônibus para o contexto da IA
+function getNextBusForContext() {
+    const now = new Date();
+    const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    
+    // Busca na lista global busSchedule (definida lá embaixo)
+    if (typeof busSchedule === 'undefined') return "Horários indisponíveis";
+
+    const nextTrip = busSchedule.find(b => {
+        const [h, m] = b.start.split(':').map(Number);
+        return (h * 3600 + m * 60) > currentSeconds;
+    });
+
+    if (nextTrip) {
+        return `Próximo ônibus sai da ${nextTrip.origin} às ${nextTrip.start} com destino a ${nextTrip.dest} (Rota: ${nextTrip.route})`;
+    }
+    return "Não há mais ônibus hoje.";
 }
 
 // ... existing code (RESTANTE DAS FUNÇÕES DO UI - Manter tudo igual abaixo) ...
@@ -1456,14 +1502,18 @@ window.toggleTimer = function() {
     if(isRunning) {
         clearInterval(timerInterval);
         isRunning = false;
-        btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-        btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-        btn.innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
+        if(btn) {
+            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
+        }
     } else {
         isRunning = true;
-        btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-        btn.classList.add('bg-red-500', 'hover:bg-red-600');
-        btn.innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
+        if(btn) {
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-red-500', 'hover:bg-red-600');
+            btn.innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
+        }
         
         timerInterval = setInterval(() => {
             if(timeLeft > 0) {

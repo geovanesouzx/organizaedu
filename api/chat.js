@@ -44,6 +44,16 @@ export default async function handler(req, res) {
                - data: { id (se souber) ou texto da tarefa }
             5. create_transaction (Adicionar Gasto)
                - data: { desc, val }
+            6. create_note (Criar Nota/Resumo)
+               - data: { title, content }
+            7. control_timer (Modo Foco)
+               - data: { action: 'start'|'stop', mode: 'pomodoro'|'short'|'long' }
+            8. add_grade (Adicionar Nota Escolar)
+               - data: { subject, value, name }
+            9. change_theme (Mudar Tema)
+               - data: { mode: 'dark'|'light' }
+            10. set_style (Estilo do Widget)
+               - data: { style: 'modern'|'classic' }
 
             REGRAS DE RESPOSTA:
             - Se o usuário pedir para criar algo, USE O JSON.
@@ -54,8 +64,12 @@ export default async function handler(req, res) {
 
         const systemProfile = `
             Você é a OrganizaEdu, assistente pessoal integrada.
+            
             DADOS ATUAIS DO USUÁRIO:
-            ${JSON.stringify(context)}
+            - Perfil: ${context.profile?.name || 'Aluno'}
+            - Próximo Ônibus: ${context.busStatus || 'Desconhecido'}
+            - Orçamento: R$ ${context.currentBudget}
+            - Contexto: ${JSON.stringify(context.schedule ? 'Grade carregada' : 'Sem grade')}
         `;
 
         // --- GEMINI (GOOGLE) ---
