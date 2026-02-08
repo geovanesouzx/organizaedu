@@ -1230,45 +1230,102 @@
 
         <!-- MODAL DE VALOR DE DOAÇÃO -->
         <div id="donation-value-modal"
-            class="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-black/70 backdrop-blur-md opacity-0 transition-opacity duration-300 p-4">
+
             <div
-                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
-                <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Apoiar o Projeto ❤️</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Escolha um valor para ajudar a manter o
-                    servidor online.</p>
+                class="modal-glass w-full max-w-sm rounded-[2.5rem] shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden bg-white/95 dark:bg-slate-900/95 border border-white/20">
 
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <button onclick="selectDonationValue(6)"
-                        class="py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition">R$
-                        6</button>
-                    <button onclick="selectDonationValue(15)"
-                        class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$
-                        15</button>
-                    <button onclick="selectDonationValue(30)"
-                        class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$
-                        30</button>
+                <div
+                    class="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-rose-500/20 to-transparent pointer-events-none">
                 </div>
 
-                <div class="relative mb-6">
-                    <span class="absolute left-4 top-3.5 text-gray-400 font-bold">R$</span>
-                    <input type="number" id="custom-donation-input"
-                        class="w-full input-glass rounded-xl pl-10 pr-4 py-3 outline-none text-sm font-bold"
-                        placeholder="Outro valor..." oninput="checkCustomValue()">
-                </div>
+                <div class="p-8 relative z-10 text-center">
+                    <div
+                        class="w-20 h-20 mx-auto bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mb-5 shadow-xl shadow-rose-500/20 animate-float border border-rose-100 dark:border-rose-900/30">
+                        <i data-lucide="heart" class="w-10 h-10 text-rose-500 fill-current animate-pulse"></i>
+                    </div>
 
-                <button onclick="proceedToCpf()" id="btn-proceed-donation"
-                    class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Continuar
-                </button>
-                <button onclick="closeDonationModal()"
-                    class="mt-3 text-xs text-gray-400 font-bold hover:text-gray-600">Cancelar</button>
+                    <h3 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Apoiar o Projeto
+                    </h3>
+                    <p
+                        class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed max-w-[200px] mx-auto">
+                        Sua ajuda mantém o servidor online e o desenvolvedor acordado! ☕
+                    </p>
+
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <button onclick="selectDonationValue(6); highlightCard(this)"
+                            class="donation-card relative p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 bg-white dark:bg-slate-800 transition-all group active:scale-95 flex flex-col items-center justify-center shadow-sm hover:shadow-md h-24">
+                            <div class="text-2xl mb-1 group-hover:scale-110 transition-transform">☕</div>
+                            <div class="font-black text-slate-700 dark:text-white text-lg">R$ 6</div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Café</div>
+                        </button>
+
+                        <button onclick="selectDonationValue(15); highlightCard(this)"
+                            class="donation-card relative p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 bg-white dark:bg-slate-800 transition-all group active:scale-95 flex flex-col items-center justify-center shadow-sm hover:shadow-md h-24">
+                            <div class="text-2xl mb-1 group-hover:scale-110 transition-transform">🍕</div>
+                            <div class="font-black text-slate-700 dark:text-white text-lg">R$ 15</div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Lanche</div>
+                        </button>
+
+                        <button onclick="selectDonationValue(30); highlightCard(this)"
+                            class="donation-card relative p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 bg-white dark:bg-slate-800 transition-all group active:scale-95 flex flex-col items-center justify-center shadow-sm hover:shadow-md h-24">
+                            <div class="text-2xl mb-1 group-hover:scale-110 transition-transform">👑</div>
+                            <div class="font-black text-slate-700 dark:text-white text-lg">R$ 30</div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Hero</div>
+                        </button>
+                    </div>
+
+                    <div class="relative group mb-8">
+                        <div
+                            class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 font-bold group-focus-within:text-rose-500 transition-colors">
+                            R$
+                        </div>
+                        <input type="number" id="custom-donation-input" placeholder="Outro valor..."
+                            oninput="checkCustomValue(); resetCards()"
+                            class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-4 outline-none text-center font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-rose-500/50 transition-all shadow-inner text-sm">
+                    </div>
+
+                    <div class="space-y-3">
+                        <button onclick="proceedToCpf()" id="btn-proceed-donation"
+                            class="w-full py-4 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-rose-500/30 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 text-sm">
+                            <span>Continuar</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+
+                        <button onclick="closeDonationModal()"
+                            class="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            <script>
+                function highlightCard(btn) {
+                    // Remove destaque de todos
+                    document.querySelectorAll('.donation-card').forEach(c => {
+                        c.classList.remove('border-rose-500', 'bg-rose-50', 'dark:bg-rose-900/20', 'ring-2', 'ring-rose-200');
+                        c.classList.add('border-slate-100', 'dark:border-slate-800');
+                    });
+                    // Adiciona neste
+                    btn.classList.remove('border-slate-100', 'dark:border-slate-800');
+                    btn.classList.add('border-rose-500', 'bg-rose-50', 'dark:bg-rose-900/20', 'ring-2', 'ring-rose-200');
+
+                    // Limpa o input custom
+                    document.getElementById('custom-donation-input').value = '';
+                }
+
+                function resetCards() {
+                    document.querySelectorAll('.donation-card').forEach(c => {
+                        c.classList.remove('border-rose-500', 'bg-rose-50', 'dark:bg-rose-900/20', 'ring-2', 'ring-rose-200');
+                        c.classList.add('border-slate-100', 'dark:border-slate-800');
+                    });
+                }
+            </script>
         </div>
 
-    </div>
-
-    <!-- APP LOGIC -->
-    <script type="module" src="script.js"></script>
+        <!-- APP LOGIC -->
+        <script type="module" src="script.js"></script>
 </body>
 
 </html>
