@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
+            signInWithRedirect(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
         });
     }
 
