@@ -1,10 +1,18 @@
+/* --- 1. CONFIGURAÇÃO DAS ÁREAS SEGURAS (Android/iOS) --- */
+:root {
+    /* Pega o tamanho exato do notch/câmera e da barra de gestos */
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+}
+
 /* BASE */
 body {
     background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 30%, #E0C3FC 60%, #8EC5FC 100%);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
-    min-height: 100dvh; /* Dynamic Height para Mobile */
-    height: 100dvh; 
+    /* Garante que o fundo ocupe 100% da tela, inclusive atrás das barras */
+    min-height: 100vh;
+    min-height: 100dvh;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden; /* Importante para impedir scroll do body */
@@ -69,13 +77,28 @@ body {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
 }
 
-/* HEADER */
+/* --- 2. HEADER CORRIGIDO (Área Segura) --- */
 .sticky-header {
-    position: sticky; top: 0; z-index: 40; height: 4.5rem;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 1.5rem; background: transparent;
+    position: sticky; 
+    top: 0; 
+    z-index: 40; 
+    /* Padding dinâmico: Altura segura do topo + 1rem */
+    padding-top: calc(var(--safe-top) + 1.2rem) !important;
+    padding-bottom: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    
+    height: auto;
+    min-height: 6rem; /* Altura mínima maior para acomodar notch */
+    
+    background: transparent;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
 /* SIDEBAR (PC) */
@@ -85,21 +108,39 @@ aside.fixed-sidebar {
     flex-direction: column; border-radius: 2rem; overflow: hidden;
 }
 
-/* DOCK MOBILE FIXA */
+/* --- 3. DOCK MOBILE CORRIGIDA (Área Segura) --- */
 .glass-nav {
-    position: fixed; bottom: 1.5rem; left: 1rem; right: 1rem; z-index: 50;
-    height: 4rem;
+    position: fixed; 
+    bottom: 1.5rem; 
+    left: 1rem; 
+    right: 1rem; 
+    z-index: 50;
+    
+    /* Altura automática para crescer se tiver barra de gestos */
+    height: auto;
+    min-height: 4rem;
+
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     border-radius: 2rem;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animação suave para esconder */
-    padding-bottom: env(safe-area-inset-bottom);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Padding dinâmico: Barra de gestos + respiro */
+    padding-bottom: calc(var(--safe-bottom) + 0.5rem) !important;
+    padding-top: 0.5rem; /* Ajuste visual para centralizar ícones */
+    
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
 }
+
 .glass-nav.hidden-nav {
-    transform: translateY(200%); /* Esconde jogando para baixo */
+    transform: translateY(200%);
 }
 .dark .glass-nav {
     background: rgba(20, 20, 30, 0.7);
@@ -135,11 +176,16 @@ aside.fixed-sidebar {
 .dark .btn-scientific { background: rgba(255,255,255,0.03); color: #94a3b8; }
 .btn-clear { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 
-/* MODAL FIX */
+/* --- 4. MODAL CORRIGIDO (Não cola no topo/fundo) --- */
 .modal-glass {
     background: rgba(255, 255, 255, 0.85); 
     backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.5);
+    
+    /* Respeita as margens seguras */
+    margin-top: var(--safe-top);
+    margin-bottom: var(--safe-bottom);
+    max-height: calc(100vh - var(--safe-top) - var(--safe-bottom) - 4rem);
 }
 .dark .modal-glass {
     background: rgba(30, 41, 59, 0.85);
