@@ -88,8 +88,7 @@ export default async function handler(req, res) {
         // GEMINI
         if (provider === 'gemini') {
             if (!GEMINI_KEY) throw new Error("Chave Gemini ausente.");
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent?key=${GEMINI_KEY}`;
-            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
             let contents = [];
             if (history && Array.isArray(history)) {
                 history.forEach(msg => {
