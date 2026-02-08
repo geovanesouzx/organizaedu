@@ -15,14 +15,14 @@ export class OrganizaIA {
 
     async processMessage(userText, contextData, provider, history) {
         try {
-            // Tenta enviar com um timeout de segurança no client-side (30s)
+            // Cria um controlador de tempo limite (30 segundos) para o mobile não ficar travado
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal,
+                signal: controller.signal, // Liga o timeout
                 body: JSON.stringify({
                     provider: provider,
                     message: userText,
@@ -31,26 +31,25 @@ export class OrganizaIA {
                 })
             });
 
-            clearTimeout(timeoutId);
+            clearTimeout(timeoutId); // Limpa o timer se respondeu a tempo
 
-            // SE DER ERRO NA RESPOSTA (NÃO FOI 200 OK)
+            // SE DER ERRO NA RESPOSTA
             if (!response.ok) {
                 const errText = await response.text();
-                console.error("Erro Bruto:", errText); // Mostra no console
+                console.error("Erro Bruto:", errText);
 
-                // Tenta ler se é um JSON de erro da nossa API
+                // Tenta ler se é um JSON de erro
                 try {
                     const errJson = JSON.parse(errText);
                     return { text: `⚠️ Erro da IA: ${errJson.error || 'Desconhecido'}` };
                 } catch (e) {
-                    // Se não for JSON (ex: Erro HTML 504 do Vercel/Firebase por demora)
-                    return { text: `⚠️ Erro de Servidor (${response.status}): A conexão caiu ou demorou muito. Tente uma mensagem mais curta.` };
+                    // Se não for JSON, é erro de servidor (HTML)
+                    return { text: `⚠️ Erro Técnico (${response.status}): A conexão caiu ou os dados são muito pesados para o mobile.` };
                 }
             }
 
             const data = await response.json();
 
-            // Verifica se a IA mandou executar uma ação
             if (data.action) {
                 console.log("IA solicitou ação:", data.action);
                 await this.executeAction(data.action);
@@ -69,9 +68,9 @@ export class OrganizaIA {
         } catch (error) {
             console.error("Erro na OrganizaIA:", error);
             if (error.name === 'AbortError') {
-                return { text: "⏱️ A IA demorou muito para responder (Timeout). Sua internet pode estar lenta no celular." };
+                return { text: "⏱️ A IA demorou muito. Sua internet móvel pode estar lenta para enviar todo o contexto." };
             }
-            return { text: `🚫 Erro de Conexão: ${error.message}. Verifique sua internet.` };
+            return { text: `🚫 Erro de Conexão: ${error.message}.` };
         }
     }
 
