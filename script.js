@@ -48,16 +48,17 @@ let selectedDonationAmount = 6.00;
 let currentPaymentId = null;
 let paymentCheckInterval = null;
 
-// --- FUNÇÕES HELPER PARA A IA (CRUD DIRETO) ---
+// --- FUNÇÕES HELPER PARA A IA (20 FUNÇÕES) ---
 const AI_Actions = {
-    addClass: (data) => {
+    // 1. Criar Aula
+    create_class: (data) => {
         const newClass = {
             id: Date.now().toString(),
             name: data.name || "Nova Aula",
             day: data.day || "seg",
             start: data.start || "08:00",
             end: data.end || "09:00",
-            room: data.room || "Sala Virtual",
+            room: data.room || "EAD",
             prof: data.prof || "",
             color: 'indigo'
         };
@@ -66,95 +67,171 @@ const AI_Actions = {
         window.renderSchedule();
         window.updateNextClassWidget();
     },
-    deleteClass: (id) => {
-        let targetId = id;
-        if (!scheduleData.find(c => c.id === id)) {
-            const found = scheduleData.find(c => c.name.toLowerCase().includes(id.toLowerCase()));
-            if (found) targetId = found.id;
-        }
-
-        if (targetId) {
-            scheduleData = scheduleData.filter(x => x.id !== targetId);
+    // 2. Deletar Aula
+    delete_class: (data) => {
+        const term = (data.name_or_id || "").toLowerCase();
+        const target = scheduleData.find(c => c.id === term || c.name.toLowerCase().includes(term));
+        if (target) {
+            scheduleData = scheduleData.filter(c => c.id !== target.id);
             saveData();
             window.renderSchedule();
             window.updateNextClassWidget();
         }
     },
-    addTask: (data) => {
+    // 3. Criar Tarefa
+    create_task: (data) => {
         tasksData.unshift({
             id: Date.now(),
-            text: data.text || "Nova Tarefa",
+            text: data.text || "Tarefa",
             category: data.category || "estudo",
-            date: data.date || "",
+            date: "",
             done: false
         });
         saveData();
         window.renderTasks();
     },
-    deleteTask: (id) => {
-        tasksData = tasksData.filter(x => x.id !== id);
-        saveData();
-        window.renderTasks();
+    // 4. Deletar Tarefa
+    delete_task: (data) => {
+        const term = (data.text_or_id || "").toLowerCase();
+        const target = tasksData.find(t => t.id == term || t.text.toLowerCase().includes(term));
+        if (target) {
+            tasksData = tasksData.filter(t => t.id !== target.id);
+            saveData();
+            window.renderTasks();
+        }
     },
-    addTransaction: (data) => {
+    // 5. Criar Transação
+    create_transaction: (data) => {
         financeData.unshift({
             id: Date.now(),
-            desc: data.desc || "Gasto IA",
+            desc: data.desc || "Gasto",
             val: parseFloat(data.val) || 0,
             date: new Date().toISOString()
         });
         saveData();
         window.renderFinance();
     },
-    // --- NOVAS FUNÇÕES ---
-    createNote: (data) => {
-        const newNote = {
+    // 6. Deletar Transação
+    delete_transaction: (data) => {
+        const term = (data.desc_or_id || "").toLowerCase();
+        const target = financeData.find(f => f.id == term || f.desc.toLowerCase().includes(term));
+        if (target) {
+            financeData = financeData.filter(f => f.id !== target.id);
+            saveData();
+            window.renderFinance();
+        }
+    },
+    // 7. Criar Nota
+    create_note: (data) => {
+        notesData.unshift({
             id: Date.now().toString(),
-            title: data.title || "Nota Rápida",
+            title: data.title || "Nota IA",
             content: data.content || "",
             updatedAt: Date.now(),
             color: 'blue',
             pinned: false
-        };
-        notesData.unshift(newNote);
+        });
         saveData();
         if (window.renderNotes) window.renderNotes();
-        // Feedback visual sutil se não estiver na tela de notas
-        const btn = document.getElementById('mob-nav-ferramentas');
-        if (btn) {
-            btn.classList.add('animate-bounce');
-            setTimeout(() => btn.classList.remove('animate-bounce'), 1000);
+    },
+    // 8. Deletar Nota
+    delete_note: (data) => {
+        const term = (data.title_or_id || "").toLowerCase();
+        const target = notesData.find(n => n.id === term || n.title.toLowerCase().includes(term));
+        if (target) {
+            notesData = notesData.filter(n => n.id !== target.id);
+            if (activeNoteId === target.id) activeNoteId = null;
+            saveData();
+            if (window.renderNotes) window.renderNotes();
         }
     },
-    controlTimer: (data) => {
+    // 9. Fixar Nota
+    pin_note: (data) => {
+        const term = (data.title_or_id || "").toLowerCase();
+        const target = notesData.find(n => n.id === term || n.title.toLowerCase().includes(term));
+        if (target) {
+            target.pinned = !target.pinned;
+            saveData();
+            if (window.renderNotes) window.renderNotes();
+        }
+    },
+    // 10. Timer
+    control_timer: (data) => {
         if (data.mode && window.setTimerMode) window.setTimerMode(data.mode);
-        const btn = document.getElementById('btn-timer-start');
-        const isCurrentlyRunning = btn && btn.innerHTML.includes('pause');
-
-        if (data.action === 'start' && !isCurrentlyRunning) {
-            if (window.toggleTimer) window.toggleTimer();
-        } else if (data.action === 'stop' && isCurrentlyRunning) {
-            if (window.toggleTimer) window.toggleTimer();
+        if (data.action === 'start' && window.toggleTimer) {
+            const btn = document.getElementById('btn-timer-start');
+            if (btn && !btn.innerHTML.includes('pause')) window.toggleTimer();
+        } else if (data.action === 'stop' && window.toggleTimer) {
+            const btn = document.getElementById('btn-timer-start');
+            if (btn && btn.innerHTML.includes('pause')) window.toggleTimer();
+        } else if (data.action === 'reset' && window.resetTimer) {
+            window.resetTimer();
         }
+        window.navigateTo('pomo');
     },
-    addGrade: (data) => {
+    // 11. Nota Escolar
+    add_grade: (data) => {
         gradesData.push({
             id: Date.now(),
             subject: data.subject || "Geral",
             value: parseFloat(data.value),
-            name: data.name || "Atividade",
             date: Date.now()
         });
         saveData();
-        window.showModal("Nota Salva 🎓", `Nota ${data.value} adicionada em ${data.subject}.`);
     },
-    changeTheme: (data) => {
+    // 12. Tema
+    change_theme: (data) => {
         const isDark = document.documentElement.classList.contains('dark');
-        if (data.mode === 'dark' && !isDark) document.documentElement.classList.add('dark');
-        else if (data.mode === 'light' && isDark) document.documentElement.classList.remove('dark');
+        if (data.mode === 'dark' || (data.mode === 'toggle' && !isDark)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
     },
-    setWidgetStyle: (data) => {
+    // 13. Widget
+    set_style: (data) => {
         if (window.setWidgetStyle) window.setWidgetStyle(data.style);
+    },
+    // 14. Navegação
+    navigate_to: (data) => {
+        if (window.navigateTo) window.navigateTo(data.page);
+    },
+    // 15. Orçamento
+    set_budget: (data) => {
+        monthlyBudget = parseFloat(data.value) || 0;
+        saveData();
+        if (window.renderFinance) window.renderFinance();
+    },
+    // 16. Limpar Completas
+    clear_completed_tasks: () => {
+        tasksData = tasksData.filter(t => !t.done);
+        saveData();
+        if (window.renderTasks) window.renderTasks();
+    },
+    // 17. Filtrar Tarefas (Visual apenas)
+    filter_tasks: (data) => {
+        if (window.navigateTo) window.navigateTo('tarefas');
+        if (data.category && document.getElementById('cat-' + data.category)) {
+            selectedTaskCategory = data.category;
+            // Força a UI a atualizar se possível, ou apenas define para a próxima tarefa
+        }
+    },
+    // 18. Privacidade (Blur)
+    toggle_privacy: () => {
+        const el = document.getElementById('fin-budget-display');
+        if (el) el.classList.toggle('blur-sm');
+        const el2 = document.getElementById('fin-total-spent');
+        if (el2) el2.classList.toggle('blur-sm');
+    },
+    // 19. Reset Financeiro
+    reset_finance: () => {
+        if (confirm("IA: Deseja apagar todos os gastos?")) {
+            financeData = [];
+            saveData();
+            if (window.renderFinance) window.renderFinance();
+        }
+    },
+    // 20. Abrir Modal
+    open_modal: (data) => {
+        if (data.modal === 'donation' && window.openDonationModal) window.openDonationModal();
+        if (data.modal === 'profile' && window.navigateTo) window.navigateTo('edit-profile');
     }
 };
 
