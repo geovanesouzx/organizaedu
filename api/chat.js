@@ -5,14 +5,8 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+    if (req.method !== 'POST') { return res.status(405).json({ error: 'Method not allowed' }); }
 
     const { provider, message, history, context } = req.body;
     
@@ -22,69 +16,83 @@ export default async function handler(req, res) {
     try {
         let result = {};
 
-        // --- SISTEMA DE TOOLS (COMPLETO COM AS 20 FUNÇÕES) ---
+        // --- 1. PREPARAÇÃO DO CONTEXTO (O SEGREDO PARA A IA "VER") ---
+        // Transformamos os arrays em texto formatado para a IA entender o que existe.
+        
+        // Aulas (Incluindo ID para permitir exclusão)
+        const scheduleText = context.schedule && context.schedule.length > 0
+            ? context.schedule.map(c => `- ${c.name} (${c.day}, ${c.start}-${c.end}) | Prof: ${c.prof} | Sala: ${c.room} [ID: ${c.id}]`).join('\n')
+            : "Nenhuma aula cadastrada.";
+
+        // Tarefas (Apenas pendentes ou recentes)
+        const tasksText = context.tasks && context.tasks.length > 0
+            ? context.tasks.slice(0, 15).map(t => `- [${t.done ? 'X' : ' '}] ${t.text} (${t.category}) [ID: ${t.id}]`).join('\n')
+            : "Nenhuma tarefa.";
+
+        // Notas (Resumidas)
+        const notesText = context.notes && context.notes.length > 0
+            ? context.notes.slice(0, 5).map(n => `- ${n.title} (Conteúdo: ${n.content.substring(0, 50)}...) [ID: ${n.id}]`).join('\n')
+            : "Nenhuma nota.";
+
+        // Finanças
+        const financeText = context.finance && context.finance.length > 0
+            ? context.finance.slice(0, 10).map(f => `- ${f.desc}: R$ ${f.val} [ID: ${f.id}]`).join('\n')
+            : "Nenhum gasto registrado.";
+
+        const fullDataPrompt = `
+            DADOS ATUAIS DO USUÁRIO (Use estes dados para responder e executar ações):
+            
+            📅 GRADE DE AULAS:
+            ${scheduleText}
+
+            ✅ TAREFAS:
+            ${tasksText}
+
+            📝 NOTAS:
+            ${notesText}
+
+            💰 FINANÇAS (Orçamento: R$ ${context.currentBudget}):
+            ${financeText}
+
+            🚌 ÔNIBUS: ${context.busStatus || 'N/A'}
+            ⌚ DATA/HORA ATUAL: ${context.currentTime}
+        `;
+
+        // --- 2. INSTRUÇÕES DE FERRAMENTAS ---
         const toolsInstruction = `
             FERRAMENTAS DISPONÍVEIS:
-            Para executar uma ação, responda APENAS um JSON no seguinte formato (sem markdown):
-            {
-              "action": {
-                "type": "NOME_DA_ACAO",
-                "data": { ...dados }
-              },
-              "response": "Texto de confirmação para o usuário"
-            }
+            Para executar uma ação, responda APENAS um JSON (sem markdown).
+            Formato: { "action": { "type": "NOME", "data": { ... } }, "response": "Texto curto" }
 
-            AÇÕES SUPORTADAS (Use exatamente estes nomes):
+            AÇÕES (Use os IDs listados acima para deletar/editar):
             1. create_class: { name, day, start, end, room, prof }
-            2. delete_class: { name_or_id }
-            3. create_task: { text, category, date }
-            4. delete_task: { text_or_id }
+            2. delete_class: { id } (Se usuário pedir p/ apagar pelo nome, procure o ID na lista acima)
+            3. create_task: { text, category }
+            4. delete_task: { id }
             5. create_transaction: { desc, val }
-            6. delete_transaction: { desc_or_id }
+            6. delete_transaction: { id }
             7. create_note: { title, content }
-            8. delete_note: { title_or_id }
-            9. pin_note: { title_or_id }
-            10. control_timer: { action: 'start'|'stop'|'reset', mode: 'pomodoro'|'short'|'long' }
-            11. add_grade: { subject, value }
-            12. change_theme: { mode: 'dark'|'light'|'toggle' }
-            13. set_style: { style: 'modern'|'classic' }
-            14. navigate_to: { page: 'home'|'aulas'|'tarefas'|'financeiro'|'notas'|'pomo'|'onibus' }
-            15. set_budget: { value: numero }
-            16. clear_completed_tasks: {}
-            17. filter_tasks: { category: 'estudo'|'prova'|'trabalho'|'pessoal' }
-            18. toggle_privacy: {} (Ativa/Desativa blur nos valores)
-            19. reset_finance: {} (Apaga todos os gastos - Cuidado)
-            20. open_modal: { modal: 'donation'|'profile' }
-
+            8. delete_note: { id }
+            9. control_timer: { action: 'start'|'stop', mode: 'pomodoro' }
+            10. navigate_to: { page: 'home'|'aulas'|'tarefas'|'financeiro' }
+            
             REGRAS:
-            - Se o usuário pedir para criar algo, USE O JSON.
-            - Se for conversa normal, JSON apenas com "response".
-            - Identidade: OrganizaEdu (Assistente Pessoal Acadêmico).
+            - Se o usuário pedir para apagar algo, USE O ID que está nos dados acima.
+            - Responda de forma curta e amigável.
         `;
 
-        const systemProfile = `
-            Você é a OrganizaEdu.
-            
-            DADOS DO USUÁRIO:
-            - Nome: ${context.profile?.name || 'Estudante'}
-            - Ônibus: ${context.busStatus || 'N/A'}
-            - Saldo Restante: R$ ${(context.currentBudget - (context.finance?.reduce((a,b)=>a+b.val,0)||0)).toFixed(2)}
-            - Tarefas Pendentes: ${context.tasks?.filter(t=>!t.done).length || 0}
-            - Data/Hora: ${context.currentTime}
-        `;
+        const fullSystemPrompt = `Você é a OrganizaEdu.\n\n${fullDataPrompt}\n\n${toolsInstruction}`;
 
-        // --- GEMINI (GOOGLE) ---
+        // --- 3. CHAMADA ÀS APIs ---
+
+        // GEMINI
         if (provider === 'gemini') {
-            if (!GEMINI_KEY) throw new Error("Chave API Gemini não configurada.");
+            if (!GEMINI_KEY) throw new Error("Chave Gemini ausente.");
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
-            
-            // Usando modelo Flash mais recente para melhor performance JSON
-            const fullSystemPrompt = systemProfile + "\n\n" + toolsInstruction;
             
             let contents = [];
             if (history && Array.isArray(history)) {
                 history.forEach(msg => {
-                    // Mapeia roles para garantir compatibilidade
                     const role = (msg.role === 'user') ? 'user' : 'model';
                     contents.push({ role: role, parts: [{ text: msg.text }] });
                 });
@@ -97,40 +105,30 @@ export default async function handler(req, res) {
                 body: JSON.stringify({
                     contents: contents,
                     systemInstruction: { parts: [{ text: fullSystemPrompt }] },
-                    generationConfig: { 
-                        temperature: 0.4, 
-                        responseMimeType: "application/json" 
-                    }
+                    generationConfig: { temperature: 0.4, responseMimeType: "application/json" }
                 })
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(`Erro Gemini: ${data.error.message}`);
-            
+            if (data.error) throw new Error(data.error.message);
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!rawText) throw new Error("Resposta vazia do Gemini");
+            
+            // LIMPEZA DE JSON (Remove ```json ... ```)
+            const cleanJson = rawText.replace(/```json|```/g, '').trim();
+            result = JSON.parse(cleanJson);
 
-            try {
-                result = JSON.parse(rawText);
-            } catch (e) {
-                result = { response: rawText };
-            }
-
-        // --- GROQ (LLAMA) ---
+        // GROQ
         } else {
-             if (!GROQ_KEY) throw new Error("Chave API Groq não configurada.");
+             if (!GROQ_KEY) throw new Error("Chave Groq ausente.");
              const url = "https://api.groq.com/openai/v1/chat/completions";
              
-             const validHistory = history.map(m => {
-                 let role = 'user';
-                 if (m.role && (m.role === 'assistant' || m.role === 'ai' || m.role === 'model')) {
-                     role = 'assistant';
-                 }
-                 return { role: role, content: m.text };
-             });
+             const validHistory = history.map(m => ({
+                 role: (m.role === 'user' ? 'user' : 'assistant'),
+                 content: m.text
+             }));
 
              const messages = [
-                 { role: "system", content: systemProfile + "\n\n" + toolsInstruction + "\nIMPORTANTE: Responda APENAS em JSON." },
+                 { role: "system", content: fullSystemPrompt },
                  ...validHistory,
                  { role: "user", content: message }
              ];
@@ -142,14 +140,13 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
             result = JSON.parse(data.choices[0].message.content);
         }
 
         return res.status(200).json(result);
 
     } catch (error) {
-        console.error("API Chat Error:", error);
-        return res.status(500).json({ response: "Erro no servidor da IA. Tente novamente.", error: error.message });
+        console.error("API Error:", error);
+        return res.status(500).json({ response: "Erro interno na IA.", error: error.message });
     }
 }

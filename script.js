@@ -779,16 +779,15 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
         // Monta o contexto leve
         const userContext = {
             profile: userProfileData,
-            schedule: scheduleData,
-            tasks: optimizedTasks, // Versão otimizada
-            finance: financeData,
-            notes: optimizedNotes, // Versão otimizada
+            schedule: scheduleData, // Vê todas as aulas
+            tasks: tasksData,       // Vê todas as tarefas
+            finance: financeData,   // Vê as finanças
+            notes: notesData,       // Vê as notas
             grades: gradesData,
-            busStatus: nextBusInfo,
+            busStatus: typeof getNextBusForContext === 'function' ? getNextBusForContext() : "N/A",
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
-
         // Limita o histórico enviado para a IA (últimas 6 mensagens)
         const limitedHistory = currentChatHistory.slice(-6);
 
