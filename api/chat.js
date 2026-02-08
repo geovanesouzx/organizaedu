@@ -121,16 +121,18 @@ export default async function handler(req, res) {
              if (!GROQ_KEY) throw new Error("Chave API Groq não configurada.");
              const url = "https://api.groq.com/openai/v1/chat/completions";
              
-             // Mapeamento correto para Llama/OpenAI: 'user' ou 'assistant'
-             // CORREÇÃO: Firestore salva como 'ai', Groq precisa de 'assistant'
-             const historyMessages = history.map(m => ({ 
-                 role: (m.role === 'user' ? 'user' : 'assistant'), 
-                 content: m.text 
-             }));
+             // CORREÇÃO DE ROLE: Garante que apenas 'user' ou 'assistant' sejam passados
+             const validHistory = history.map(m => {
+                 let role = 'user';
+                 if (m.role && (m.role === 'assistant' || m.role === 'ai' || m.role === 'model')) {
+                     role = 'assistant';
+                 }
+                 return { role: role, content: m.text };
+             });
 
              const messages = [
                  { role: "system", content: systemProfile + "\n\n" + toolsInstruction + "\nIMPORTANTE: Responda SEMPRE em JSON válido." },
-                 ...historyMessages,
+                 ...validHistory,
                  { role: "user", content: message }
              ];
 
