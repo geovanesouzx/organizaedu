@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="light">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>OrganizaEdu - Liquid Glass</title>
 
-    <!-- Fontes Inter e Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@200;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Ícones Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="https://files.catbox.moe/614u86.png">
+    <link rel="apple-touch-icon" href="https://files.catbox.moe/614u86.png">
 
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@200;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -64,37 +67,58 @@
 
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="text-slate-800 dark:text-slate-100 transition-colors duration-300 selection:bg-indigo-500 selection:text-white font-sans overflow-hidden bg-slate-50 dark:bg-slate-900">
+
+<body
+    class="text-slate-800 dark:text-slate-100 transition-colors duration-300 selection:bg-indigo-500 selection:text-white font-sans overflow-hidden bg-slate-50 dark:bg-slate-900">
 
     <!-- TELA DE CARREGAMENTO -->
-    <div id="loading-screen" class="fixed inset-0 z-[100] bg-white dark:bg-[#0f172a] flex flex-col items-center justify-center transition-opacity duration-500">
+    <div id="loading-screen"
+        class="fixed inset-0 z-[100] bg-white dark:bg-[#0f172a] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="relative w-32 h-32 mb-6">
-            <img src="https://files.catbox.moe/614u86.png" class="w-full h-full object-contain animate-float drop-shadow-2xl">
+            <img src="https://files.catbox.moe/614u86.png"
+                class="w-full h-full object-contain animate-float drop-shadow-2xl">
         </div>
-        <h2 class="text-2xl font-bold font-display text-indigo-900 dark:text-white tracking-tight animate-pulse">OrganizaEdu</h2>
+        <h2 class="text-2xl font-bold font-display text-indigo-900 dark:text-white tracking-tight animate-pulse">
+            OrganizaEdu</h2>
         <p class="text-sm text-slate-500 mt-2 font-medium">Sincronizando sua vida acadêmica...</p>
     </div>
 
     <!-- TELA DE LOGIN -->
-    <div id="login-screen" class="fixed inset-0 z-[90] hidden bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-slate-900 flex items-center justify-center p-4">
+    <div id="login-screen"
+        class="fixed inset-0 z-[90] hidden bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-slate-900 flex items-center justify-center p-4">
         <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-             <div class="absolute top-[-10%] right-[-5%] w-[30rem] h-[30rem] bg-purple-400/20 rounded-full blur-[80px] animate-blob"></div>
-             <div class="absolute bottom-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-indigo-400/20 rounded-full blur-[80px] animate-blob animation-delay-2000"></div>
+            <div
+                class="absolute top-[-10%] right-[-5%] w-[30rem] h-[30rem] bg-purple-400/20 rounded-full blur-[80px] animate-blob">
+            </div>
+            <div
+                class="absolute bottom-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-indigo-400/20 rounded-full blur-[80px] animate-blob animation-delay-2000">
+            </div>
         </div>
-        
+
         <div class="glass-panel p-8 rounded-[2.5rem] w-full max-w-md text-center relative shadow-2xl animate-fade-in">
             <div class="w-24 h-24 mx-auto mb-6 transform hover:scale-105 transition duration-500">
                 <img src="https://files.catbox.moe/614u86.png" class="w-full h-full object-contain drop-shadow-lg">
             </div>
-            <h1 class="text-3xl font-black font-display text-slate-900 dark:text-white mb-2 tracking-tight">Bem-vindo</h1>
-            <p class="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Sua plataforma completa para organização acadêmica. Entre para sincronizar seus dados.</p>
-            
-            <button id="btn-login-google" class="w-full py-4 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 flex items-center justify-center gap-3 transition-all active:scale-95 group">
+            <h1 class="text-3xl font-black font-display text-slate-900 dark:text-white mb-2 tracking-tight">Bem-vindo
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Sua plataforma completa para organização
+                acadêmica. Entre para sincronizar seus dados.</p>
+
+            <button id="btn-login-google"
+                class="w-full py-4 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 flex items-center justify-center gap-3 transition-all active:scale-95 group">
                 <svg class="w-6 h-6" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4" />
+                    <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853" />
+                    <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05" />
+                    <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335" />
                 </svg>
                 <span>Continuar com Google</span>
             </button>
@@ -103,43 +127,62 @@
     </div>
 
     <!-- TELA DE CONFIGURAÇÃO INICIAL (SETUP) -->
-    <div id="setup-screen" class="fixed inset-0 z-[85] hidden bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900 flex items-center justify-center p-4 overflow-y-auto">
+    <div id="setup-screen"
+        class="fixed inset-0 z-[85] hidden bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900 flex items-center justify-center p-4 overflow-y-auto">
         <div class="glass-panel p-8 rounded-[2.5rem] w-full max-w-md relative shadow-2xl animate-fade-in my-auto">
-            <h2 class="text-2xl font-black text-indigo-900 dark:text-white mb-2 text-center">Vamos configurar seu perfil</h2>
-            <p class="text-sm text-slate-500 text-center mb-8">Precisamos de alguns detalhes para personalizar sua experiência.</p>
+            <h2 class="text-2xl font-black text-indigo-900 dark:text-white mb-2 text-center">Vamos configurar seu perfil
+            </h2>
+            <p class="text-sm text-slate-500 text-center mb-8">Precisamos de alguns detalhes para personalizar sua
+                experiência.</p>
 
             <div class="flex flex-col items-center mb-6">
-                <div class="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-white dark:border-slate-700 mb-3 relative group bg-indigo-100">
-                    <img id="setup-profile-preview" src="https://files.catbox.moe/614u86.png" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer" onclick="document.getElementById('setup-file-upload').click()">
+                <div
+                    class="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-white dark:border-slate-700 mb-3 relative group bg-indigo-100">
+                    <img id="setup-profile-preview" src="https://files.catbox.moe/614u86.png"
+                        class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                        onclick="document.getElementById('setup-file-upload').click()">
                         <i data-lucide="camera" class="text-white w-8 h-8"></i>
                     </div>
                 </div>
-                <input type="file" id="setup-file-upload" class="hidden" accept="image/*" onchange="window.uploadToImgurSetup(this)">
-                <button onclick="document.getElementById('setup-file-upload').click()" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Escolher Foto</button>
+                <input type="file" id="setup-file-upload" class="hidden" accept="image/*"
+                    onchange="window.uploadToImgurSetup(this)">
+                <button onclick="document.getElementById('setup-file-upload').click()"
+                    class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Escolher
+                    Foto</button>
                 <p id="setup-upload-status" class="text-[10px] text-gray-400 mt-1 h-4"></p>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome Completo</label>
-                    <input type="text" id="setup-name" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Como quer ser chamado?">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome
+                        Completo</label>
+                    <input type="text" id="setup-name"
+                        class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"
+                        placeholder="Como quer ser chamado?">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome de Usuário</label>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome de
+                        Usuário</label>
                     <div class="relative">
                         <span class="absolute left-4 top-3 text-gray-400 font-bold">@</span>
-                        <input type="text" id="setup-username" class="w-full input-glass rounded-xl pl-8 pr-4 py-3 outline-none text-sm" placeholder="usuario_exemplo">
+                        <input type="text" id="setup-username"
+                            class="w-full input-glass rounded-xl pl-8 pr-4 py-3 outline-none text-sm"
+                            placeholder="usuario_exemplo">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label>
-                        <input type="text" id="setup-course" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Ex: BCT">
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label>
+                        <input type="text" id="setup-course"
+                            class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Ex: BCT">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Semestre</label>
-                        <select id="setup-semester" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm appearance-none cursor-pointer">
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Semestre</label>
+                        <select id="setup-semester"
+                            class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm appearance-none cursor-pointer">
                             <option value="1º Semestre">1º Semestre</option>
                             <option value="2º Semestre">2º Semestre</option>
                             <option value="3º Semestre">3º Semestre</option>
@@ -153,7 +196,8 @@
                 </div>
             </div>
 
-            <button onclick="finishSetup()" class="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+            <button onclick="finishSetup()"
+                class="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
                 <span>Concluir e Entrar</span>
                 <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </button>
@@ -162,49 +206,70 @@
 
     <!-- Fundo Animado (App) -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-60 dark:opacity-30">
-        <div class="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-purple-400/40 rounded-full blur-[100px] animate-blob mix-blend-overlay"></div>
-        <div class="absolute bottom-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-indigo-400/40 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-overlay"></div>
+        <div
+            class="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-purple-400/40 rounded-full blur-[100px] animate-blob mix-blend-overlay">
+        </div>
+        <div
+            class="absolute bottom-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-indigo-400/40 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-overlay">
+        </div>
     </div>
 
     <!-- Layout Principal -->
-    <div id="app-content" class="flex w-full relative h-[100dvh] overflow-hidden hidden opacity-0 transition-opacity duration-500">
-        
+    <div id="app-content"
+        class="flex w-full relative h-[100dvh] overflow-hidden hidden opacity-0 transition-opacity duration-500">
+
         <!-- SIDEBAR (PC) -->
         <aside class="hidden md:flex fixed-sidebar glass-panel shadow-2xl">
             <div class="p-8 flex items-center gap-3 shrink-0">
-                <img src="https://files.catbox.moe/614u86.png" class="w-16 h-auto object-contain hover:scale-105 transition drop-shadow-md">
-                <h1 class="font-display font-extrabold text-xl text-indigo-950 dark:text-white tracking-tight">OrganizaEdu</h1>
+                <img src="https://files.catbox.moe/614u86.png"
+                    class="w-16 h-auto object-contain hover:scale-105 transition drop-shadow-md">
+                <h1 class="font-display font-extrabold text-xl text-indigo-950 dark:text-white tracking-tight">
+                    OrganizaEdu</h1>
             </div>
 
             <nav class="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar pb-4">
-                <button onclick="navigateTo('home')" id="desk-nav-home" class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i data-lucide="layout-dashboard" class="w-5"></i> Início</button>
-                <button onclick="navigateTo('aulas')" id="desk-nav-aulas" class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i data-lucide="book-open" class="w-5"></i> Grade</button>
-                <button onclick="navigateTo('ia')" id="desk-nav-ia" class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i data-lucide="sparkles" class="w-5"></i> Organiza IA</button>
-                <button onclick="navigateTo('ferramentas')" id="desk-nav-ferramentas" class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i data-lucide="wrench" class="w-5"></i> Ferramentas</button>
-                <button onclick="navigateTo('onibus')" id="desk-nav-onibus" class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i data-lucide="bus" class="w-5"></i> Circular</button>
+                <button onclick="navigateTo('home')" id="desk-nav-home"
+                    class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i
+                        data-lucide="layout-dashboard" class="w-5"></i> Início</button>
+                <button onclick="navigateTo('aulas')" id="desk-nav-aulas"
+                    class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i
+                        data-lucide="book-open" class="w-5"></i> Grade</button>
+                <button onclick="navigateTo('ia')" id="desk-nav-ia"
+                    class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i
+                        data-lucide="sparkles" class="w-5"></i> Organiza IA</button>
+                <button onclick="navigateTo('ferramentas')" id="desk-nav-ferramentas"
+                    class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i
+                        data-lucide="wrench" class="w-5"></i> Ferramentas</button>
+                <button onclick="navigateTo('onibus')" id="desk-nav-onibus"
+                    class="nav-item w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-bold transition-all hover:bg-white/40 dark:hover:bg-white/10 glass-inner border-transparent shadow-none hover:shadow-sm"><i
+                        data-lucide="bus" class="w-5"></i> Circular</button>
             </nav>
         </aside>
 
         <!-- ÁREA CENTRAL -->
         <main class="flex-1 w-full md:ml-[21rem] md:w-[calc(100%-22rem)] relative flex flex-col h-full overflow-hidden">
-            
+
             <!-- HEADER STICKY -->
             <header class="sticky-header shrink-0 z-30">
                 <div class="flex items-center gap-4 flex-1 min-w-0 h-full">
-                    <button id="back-btn" onclick="window.history.back()" class="md:hidden hidden rounded-full p-2 glass-inner hover:bg-white/40 transition shrink-0 border-transparent">
+                    <button id="back-btn" onclick="window.history.back()"
+                        class="md:hidden hidden rounded-full p-2 glass-inner hover:bg-white/40 transition shrink-0 border-transparent">
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </button>
                     <!-- Logo no Mobile -->
                     <img src="https://files.catbox.moe/614u86.png" class="w-8 h-8 object-contain md:hidden">
-                    <h2 class="font-display font-black text-2xl md:text-3xl text-slate-800 dark:text-white tracking-tight drop-shadow-sm truncate flex items-center h-full" id="header-title">Visão Geral</h2>
+                    <h2 class="font-display font-black text-2xl md:text-3xl text-slate-800 dark:text-white tracking-tight drop-shadow-sm truncate flex items-center h-full"
+                        id="header-title">Visão Geral</h2>
                 </div>
-                
+
                 <div class="flex items-center gap-3 shrink-0 h-full">
-                    <button onclick="document.documentElement.classList.toggle('dark')" class="w-10 h-10 rounded-full glass-inner flex items-center justify-center text-gray-600 dark:text-gray-300 shadow-sm transition hover:scale-105">
+                    <button onclick="document.documentElement.classList.toggle('dark')"
+                        class="w-10 h-10 rounded-full glass-inner flex items-center justify-center text-gray-600 dark:text-gray-300 shadow-sm transition hover:scale-105">
                         <i data-lucide="moon" class="dark:hidden w-5"></i>
                         <i data-lucide="sun" class="hidden dark:block text-amber-400 w-5"></i>
                     </button>
-                    <button onclick="navigateTo('perfil')" class="w-10 h-10 rounded-full glass-inner p-0 overflow-hidden shadow-lg hover:scale-105 transition border-2 border-white/40 dark:border-white/10">
+                    <button onclick="navigateTo('perfil')"
+                        class="w-10 h-10 rounded-full glass-inner p-0 overflow-hidden shadow-lg hover:scale-105 transition border-2 border-white/40 dark:border-white/10">
                         <img id="header-img" src="" class="w-full h-full object-cover bg-indigo-100">
                     </button>
                 </div>
@@ -212,64 +277,87 @@
 
             <!-- CONTEÚDO DA PÁGINA -->
             <div id="app-container" class="flex-1 relative w-full h-full overflow-hidden">
-                
+
                 <!-- 1. HOME -->
-                <div id="view-home" class="page-view h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
-                      <div class="max-w-5xl mx-auto space-y-6">
+                <div id="view-home"
+                    class="page-view h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                    <div class="max-w-5xl mx-auto space-y-6">
                         <!-- WIDGET CIRCULAR -->
-                        <div class="glass-panel p-6 rounded-[2rem] relative overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer" onclick="navigateTo('onibus')">
+                        <div class="glass-panel p-6 rounded-[2rem] relative overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                            onclick="navigateTo('onibus')">
                             <div class="flex flex-row justify-between items-start gap-4 mb-4">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <span id="bus-status-dot" class="w-2.5 h-2.5 rounded-full bg-gray-400 shadow-sm animate-pulse"></span>
-                                        <span id="bus-status-text" class="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Carregando...</span>
+                                        <span id="bus-status-dot"
+                                            class="w-2.5 h-2.5 rounded-full bg-gray-400 shadow-sm animate-pulse"></span>
+                                        <span id="bus-status-text"
+                                            class="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Carregando...</span>
                                     </div>
-                                    <h2 class="text-4xl font-display font-black text-indigo-900 dark:text-white leading-none tracking-tight mb-1" id="bus-next-time">--:--</h2>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300 font-medium truncate flex items-center gap-1" id="bus-route-desc">
+                                    <h2 class="text-4xl font-display font-black text-indigo-900 dark:text-white leading-none tracking-tight mb-1"
+                                        id="bus-next-time">--:--</h2>
+                                    <p class="text-xs text-gray-500 dark:text-gray-300 font-medium truncate flex items-center gap-1"
+                                        id="bus-route-desc">
                                         <i data-lucide="map-pin" class="w-3 h-3"></i> Verificando horários...
                                     </p>
                                 </div>
                                 <div class="flex-shrink-0">
-                                    <img src="https://www.imagensanimadas.com/data/media/425/onibus-imagem-animada-0001.gif" class="w-20 h-20 object-contain drop-shadow-md opacity-90" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\'bus\' class=\'text-indigo-500 w-12 h-12\'></i>'">
+                                    <img src="https://www.imagensanimadas.com/data/media/425/onibus-imagem-animada-0001.gif"
+                                        class="w-20 h-20 object-contain drop-shadow-md opacity-90"
+                                        onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\'bus\' class=\'text-indigo-500 w-12 h-12\'></i>'">
                                 </div>
                             </div>
-                            <div class="relative w-full h-2 glass-inner rounded-full mb-1 overflow-hidden border-none bg-black/5 dark:bg-white/5">
-                                <div id="bus-progress-bar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full w-0 transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                            <div
+                                class="relative w-full h-2 glass-inner rounded-full mb-1 overflow-hidden border-none bg-black/5 dark:bg-white/5">
+                                <div id="bus-progress-bar"
+                                    class="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full w-0 transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                                </div>
                             </div>
-                            <p class="text-[10px] text-right text-gray-400 font-mono mb-4" id="bus-eta">Calculando...</p>
-                            <div id="bus-timeline" class="pt-2 border-t border-white/20 dark:border-white/5 space-y-0 relative min-h-[40px]"></div>
+                            <p class="text-[10px] text-right text-gray-400 font-mono mb-4" id="bus-eta">Calculando...
+                            </p>
+                            <div id="bus-timeline"
+                                class="pt-2 border-t border-white/20 dark:border-white/5 space-y-0 relative min-h-[40px]">
+                            </div>
                         </div>
 
                         <!-- Grid de Atalhos -->
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                            <div id="widget-next-class" onclick="navigateTo('aulas')" class="glass-panel p-5 rounded-[2rem] min-h-[9rem] flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden">
+                            <div id="widget-next-class" onclick="navigateTo('aulas')"
+                                class="glass-panel p-5 rounded-[2rem] min-h-[9rem] flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden">
                                 <!-- Injetado via JS -->
                             </div>
-                            <button onclick="navigateTo('tarefas')" class="glass-panel p-5 rounded-[2rem] h-36 flex flex-col items-center justify-center text-center active:scale-95 transition hover:shadow-lg group">
-                                <div class="w-12 h-12 glass-inner rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm text-emerald-600 dark:text-emerald-400">
+                            <button onclick="navigateTo('tarefas')"
+                                class="glass-panel p-5 rounded-[2rem] h-36 flex flex-col items-center justify-center text-center active:scale-95 transition hover:shadow-lg group">
+                                <div
+                                    class="w-12 h-12 glass-inner rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm text-emerald-600 dark:text-emerald-400">
                                     <i data-lucide="check-circle-2" class="w-6 h-6"></i>
                                 </div>
                                 <p class="font-bold text-sm text-gray-700 dark:text-gray-200">Tarefas</p>
                             </button>
-                            <button onclick="navigateTo('ia')" class="glass-panel p-5 rounded-[2rem] h-36 flex flex-col items-center justify-center text-center active:scale-95 transition hover:shadow-lg group col-span-2 md:col-span-1">
-                                <div class="w-12 h-12 glass-inner rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm text-purple-600 dark:text-purple-400">
+                            <button onclick="navigateTo('ia')"
+                                class="glass-panel p-5 rounded-[2rem] h-36 flex flex-col items-center justify-center text-center active:scale-95 transition hover:shadow-lg group col-span-2 md:col-span-1">
+                                <div
+                                    class="w-12 h-12 glass-inner rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm text-purple-600 dark:text-purple-400">
                                     <i data-lucide="sparkles" class="w-6 h-6"></i>
                                 </div>
                                 <p class="font-bold text-sm text-gray-700 dark:text-gray-200">Organiza IA</p>
                             </button>
                         </div>
-                      </div>
+                    </div>
                 </div>
 
                 <!-- 2. AULAS -->
-                <div id="view-aulas" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                <div id="view-aulas"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
                     <div class="max-w-5xl mx-auto">
-                        <div class="glass-panel p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-lg sticky top-0 z-30 backdrop-blur-md">
+                        <div
+                            class="glass-panel p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-lg sticky top-0 z-30 backdrop-blur-md">
                             <div>
                                 <h2 class="text-xl font-black text-indigo-900 dark:text-white">Minha Grade</h2>
                                 <p class="text-xs text-gray-500">Planejamento Semanal</p>
                             </div>
-                            <button onclick="openAddClassModal()" class="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg flex items-center justify-center transition active:scale-90"><i data-lucide="plus" class="w-5 h-5"></i></button>
+                            <button onclick="openAddClassModal()"
+                                class="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg flex items-center justify-center transition active:scale-90"><i
+                                    data-lucide="plus" class="w-5 h-5"></i></button>
                         </div>
                         <div id="schedule-container" class="space-y-6 pb-20"></div>
                     </div>
@@ -277,12 +365,15 @@
 
                 <!-- 3. ORGANIZA IA (MOBILE FIXED) -->
                 <div id="view-ia" class="page-view hidden w-full h-full flex flex-col relative overflow-hidden">
-                    
+
                     <!-- DRAWER DO HISTÓRICO (Oculto por padrão) -->
-                    <div id="history-drawer" class="absolute inset-y-0 right-0 w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col border-l border-white/20">
+                    <div id="history-drawer"
+                        class="absolute inset-y-0 right-0 w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col border-l border-white/20">
                         <div class="p-4 border-b border-white/10 flex justify-between items-center">
                             <h3 class="font-bold text-slate-800 dark:text-white">Histórico</h3>
-                            <button onclick="toggleHistory(false)" class="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            <button onclick="toggleHistory(false)"
+                                class="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full"><i data-lucide="x"
+                                    class="w-5 h-5"></i></button>
                         </div>
                         <div id="history-list" class="flex-1 overflow-y-auto p-4 space-y-2">
                             <!-- Lista de chats aqui -->
@@ -290,111 +381,172 @@
                     </div>
 
                     <!-- HEADER IA (Seletor de Modelo & Ações) -->
-                    <div class="shrink-0 flex items-center justify-between p-4 glass-panel border-b border-white/20 dark:border-white/10 z-30">
+                    <div
+                        class="shrink-0 flex items-center justify-between p-4 glass-panel border-b border-white/20 dark:border-white/10 z-30">
                         <div class="flex items-center gap-2">
-                             <!-- Botão de Histórico (Mobile/Desktop) -->
-                             <button onclick="toggleHistory(true)" class="p-2 glass-inner rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition">
+                            <!-- Botão de Histórico (Mobile/Desktop) -->
+                            <button onclick="toggleHistory(true)"
+                                class="p-2 glass-inner rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition">
                                 <i data-lucide="history" class="w-5 h-5"></i>
                             </button>
-                            <span class="font-black text-lg text-slate-800 dark:text-white hidden sm:block">Organiza IA</span>
+                            <span class="font-black text-lg text-slate-800 dark:text-white hidden sm:block">Organiza
+                                IA</span>
                         </div>
-                        
+
                         <div class="flex items-center gap-2">
                             <div class="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
-                                <button onclick="setAIProvider('gemini')" id="btn-ai-gemini" class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all bg-white dark:bg-slate-700 text-indigo-600 shadow-sm">Gemini</button>
-                                <button onclick="setAIProvider('groq')" id="btn-ai-groq" class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700">Llama 3</button>
+                                <button onclick="setAIProvider('gemini')" id="btn-ai-gemini"
+                                    class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all bg-white dark:bg-slate-700 text-indigo-600 shadow-sm">Gemini</button>
+                                <button onclick="setAIProvider('groq')" id="btn-ai-groq"
+                                    class="px-3 py-1.5 rounded-md text-[10px] font-bold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700">Llama
+                                    3</button>
                             </div>
-                            
+
                             <!-- Botão Nova Conversa -->
-                            <button onclick="startNewChat()" class="p-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition active:scale-95" title="Nova Conversa">
+                            <button onclick="startNewChat()"
+                                class="p-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition active:scale-95"
+                                title="Nova Conversa">
                                 <i data-lucide="message-square-plus" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
 
-                      <!-- Mensagens (FLEX GROW com overflow) -->
-                      <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 hide-scroll w-full pb-0">
-                          <!-- Inserido via JS -->
-                      </div>
+                    <!-- Mensagens (FLEX GROW com overflow) -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 hide-scroll w-full pb-0">
+                        <!-- Inserido via JS -->
+                    </div>
 
-                      <!-- Input Area (Sticky no fundo do container flex) -->
-                      <div class="shrink-0 w-full z-20 bg-gradient-to-t from-white/90 via-white/50 to-transparent dark:from-slate-900/90 dark:via-slate-900/50 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4">
-                          <div class="glass-panel p-2 rounded-[1.5rem] flex items-center gap-2 shadow-xl backdrop-blur-xl border-white/40 dark:border-white/10 max-w-4xl mx-auto">
-                              
-                              <!-- Botão Upload Imagem -->
-                              <button onclick="document.getElementById('chat-file-upload').click()" class="w-10 h-10 glass-inner rounded-full flex items-center justify-center text-gray-500 hover:text-indigo-600 transition active:scale-95" id="btn-upload-chat">
-                                  <i data-lucide="image-plus" class="w-5 h-5"></i>
-                              </button>
-                              <input type="file" id="chat-file-upload" class="hidden" accept="image/*" onchange="window.uploadChatImage(this)">
+                    <!-- Input Area (Sticky no fundo do container flex) -->
+                    <div
+                        class="shrink-0 w-full z-20 bg-gradient-to-t from-white/90 via-white/50 to-transparent dark:from-slate-900/90 dark:via-slate-900/50 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4">
+                        <div
+                            class="glass-panel p-2 rounded-[1.5rem] flex items-center gap-2 shadow-xl backdrop-blur-xl border-white/40 dark:border-white/10 max-w-4xl mx-auto">
 
-                              <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1 bg-transparent px-2 py-3 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400" onkeypress="if(event.key === 'Enter') sendMessage()" autocomplete="off">
-                              
-                              <button onclick="sendMessage()" class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-indigo-700 transition active:scale-95 shadow-md" id="btn-send-message">
-                                  <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
-                              </button>
-                          </div>
-                          <!-- Indicador de Upload -->
-                          <div id="chat-upload-status" class="text-center mt-1 hidden">
-                              <span class="text-[10px] font-bold text-indigo-500 animate-pulse flex items-center justify-center gap-1"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando imagem...</span>
-                          </div>
-                      </div>
+                            <!-- Botão Upload Imagem -->
+                            <button onclick="document.getElementById('chat-file-upload').click()"
+                                class="w-10 h-10 glass-inner rounded-full flex items-center justify-center text-gray-500 hover:text-indigo-600 transition active:scale-95"
+                                id="btn-upload-chat">
+                                <i data-lucide="image-plus" class="w-5 h-5"></i>
+                            </button>
+                            <input type="file" id="chat-file-upload" class="hidden" accept="image/*"
+                                onchange="window.uploadChatImage(this)">
+
+                            <input type="text" id="chat-input" placeholder="Digite sua mensagem..."
+                                class="flex-1 bg-transparent px-2 py-3 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                                onkeypress="if(event.key === 'Enter') sendMessage()" autocomplete="off">
+
+                            <button onclick="sendMessage()"
+                                class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-indigo-700 transition active:scale-95 shadow-md"
+                                id="btn-send-message">
+                                <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                            </button>
+                        </div>
+                        <!-- Indicador de Upload -->
+                        <div id="chat-upload-status" class="text-center mt-1 hidden">
+                            <span
+                                class="text-[10px] font-bold text-indigo-500 animate-pulse flex items-center justify-center gap-1"><i
+                                    data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando imagem...</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 4. FERRAMENTAS (Mantido igual) -->
-                <div id="view-ferramentas" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                <div id="view-ferramentas"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
                     <!-- ... Conteúdo Ferramentas (Mantido) ... -->
-                     <div class="max-w-5xl mx-auto">
+                    <div class="max-w-5xl mx-auto">
                         <h2 class="text-lg font-bold mb-4 text-slate-700 dark:text-white">Ferramentas de Estudo</h2>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <!-- Botão DOAR -->
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group border-2 border-transparent hover:border-amber-400/50" onclick="openDonationModal()">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-amber-500 group-hover:scale-110 transition bg-amber-100/50 dark:bg-amber-900/30"><i data-lucide="heart" class="w-7 h-7 fill-current"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group border-2 border-transparent hover:border-amber-400/50"
+                                onclick="openDonationModal()">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-amber-500 group-hover:scale-110 transition bg-amber-100/50 dark:bg-amber-900/30">
+                                    <i data-lucide="heart" class="w-7 h-7 fill-current"></i>
+                                </div>
                                 <span class="font-bold text-sm text-amber-600 dark:text-amber-400">Apoiar Projeto</span>
                             </div>
 
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('calculadora')">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-blue-500 group-hover:scale-110 transition"><i data-lucide="calculator" class="w-7 h-7"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group"
+                                onclick="navigateTo('calculadora')">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-blue-500 group-hover:scale-110 transition">
+                                    <i data-lucide="calculator" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm">Calculadora</span>
                             </div>
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('financeiro')">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition"><i data-lucide="wallet" class="w-7 h-7"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group"
+                                onclick="navigateTo('financeiro')">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition">
+                                    <i data-lucide="wallet" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm">Financeiro</span>
                             </div>
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('notas')">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-yellow-500 group-hover:scale-110 transition"><i data-lucide="sticky-note" class="w-7 h-7"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group"
+                                onclick="navigateTo('notas')">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-yellow-500 group-hover:scale-110 transition">
+                                    <i data-lucide="sticky-note" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm">Anotações</span>
                             </div>
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('pomo')">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-red-500 group-hover:scale-110 transition"><i data-lucide="timer" class="w-7 h-7"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group"
+                                onclick="navigateTo('pomo')">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-red-500 group-hover:scale-110 transition">
+                                    <i data-lucide="timer" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm">Modo Foco</span>
                             </div>
-                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group" onclick="navigateTo('sounds')">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-purple-500 group-hover:scale-110 transition"><i data-lucide="headphones" class="w-7 h-7"></i></div>
+                            <div class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group"
+                                onclick="navigateTo('sounds')">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-purple-500 group-hover:scale-110 transition">
+                                    <i data-lucide="headphones" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm text-center">Sons</span>
                             </div>
-                             <a href="https://sistemas.ufrb.edu.br/sigaa/verTelaLogin.do" target="_blank" class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group">
-                                <div class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-indigo-500 group-hover:scale-110 transition"><i data-lucide="globe" class="w-7 h-7"></i></div>
+                            <a href="https://sistemas.ufrb.edu.br/sigaa/verTelaLogin.do" target="_blank"
+                                class="glass-panel p-6 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer group">
+                                <div
+                                    class="w-14 h-14 glass-inner rounded-full flex items-center justify-center text-indigo-500 group-hover:scale-110 transition">
+                                    <i data-lucide="globe" class="w-7 h-7"></i>
+                                </div>
                                 <span class="font-bold text-sm text-center">Portal UFRB</span>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                 <!-- 5. TAREFAS -->
-                <div id="view-tarefas" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                <!-- 5. TAREFAS -->
+                <div id="view-tarefas"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
                     <div class="max-w-5xl mx-auto">
                         <div class="glass-panel p-6 rounded-[2rem] mb-6 shadow-lg">
                             <div class="flex justify-between items-center mb-4">
                                 <h2 class="text-xl font-black text-indigo-900 dark:text-white">Minhas Tarefas</h2>
-                                <button onclick="openAddTaskModal()" class="bg-indigo-600 text-white rounded-xl w-10 h-10 flex items-center justify-center shadow-lg active:scale-95"><i data-lucide="plus" class="w-5 h-5"></i></button>
+                                <button onclick="openAddTaskModal()"
+                                    class="bg-indigo-600 text-white rounded-xl w-10 h-10 flex items-center justify-center shadow-lg active:scale-95"><i
+                                        data-lucide="plus" class="w-5 h-5"></i></button>
                             </div>
                             <div class="mb-4">
-                                <div class="flex justify-between text-xs font-bold text-gray-500 mb-1"><span>Progresso</span><span id="task-progress-text">0%</span></div>
-                                <div class="w-full h-2 glass-inner rounded-full overflow-hidden bg-black/5 dark:bg-white/5"><div id="task-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                                <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                                    <span>Progresso</span><span id="task-progress-text">0%</span>
+                                </div>
+                                <div
+                                    class="w-full h-2 glass-inner rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
+                                    <div id="task-progress-bar"
+                                        class="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                        style="width: 0%"></div>
+                                </div>
                             </div>
                             <div class="flex glass-inner p-1 rounded-xl border-none bg-black/5 dark:bg-white/5">
-                                <button onclick="setTaskTab('pending')" id="tab-pending" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all tab-active">A Fazer</button>
-                                <button onclick="setTaskTab('completed')" id="tab-completed" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all hover:bg-white/10">Concluídas</button>
+                                <button onclick="setTaskTab('pending')" id="tab-pending"
+                                    class="flex-1 py-2 text-xs font-bold rounded-lg transition-all tab-active">A
+                                    Fazer</button>
+                                <button onclick="setTaskTab('completed')" id="tab-completed"
+                                    class="flex-1 py-2 text-xs font-bold rounded-lg transition-all hover:bg-white/10">Concluídas</button>
                             </div>
                         </div>
                         <div id="todo-list" class="space-y-3 pb-20"></div>
@@ -402,69 +554,90 @@
                 </div>
 
                 <!-- OUTROS VIEWS (Calculadora, Financeiro, Onibus, Perfil, Notas, Pomo, Sounds, Edit, Config) -->
-                <div id="view-calculadora" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                <div id="view-calculadora"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
                     <!-- ... Conteúdo Calculadora (Mantido) ... -->
-                     <div class="calc-wrapper max-w-md mx-auto mb-20">
+                    <div class="calc-wrapper max-w-md mx-auto mb-20">
                         <div class="glass-panel p-6 rounded-[2rem] shadow-lg">
-                            <div class="display-screen relative mb-4 bg-black/10 dark:bg-black/40 rounded-xl p-4 text-right h-24 flex flex-col justify-end" onclick="copyToClipboard()">
-                                <button id="toggleMode" class="absolute top-3 left-3 text-[10px] bg-white/20 px-2 py-1 rounded text-white border border-white/20" onclick="event.stopPropagation(); toggleCalcMode()">RAD</button>
-                                <div class="history text-xs text-gray-500 dark:text-gray-400 mb-1 h-4" id="calc-history"></div>
-                                <div class="current-input text-3xl font-mono font-bold text-slate-800 dark:text-white overflow-x-auto no-scrollbar" id="calc-display">0</div>
+                            <div class="display-screen relative mb-4 bg-black/10 dark:bg-black/40 rounded-xl p-4 text-right h-24 flex flex-col justify-end"
+                                onclick="copyToClipboard()">
+                                <button id="toggleMode"
+                                    class="absolute top-3 left-3 text-[10px] bg-white/20 px-2 py-1 rounded text-white border border-white/20"
+                                    onclick="event.stopPropagation(); toggleCalcMode()">RAD</button>
+                                <div class="history text-xs text-gray-500 dark:text-gray-400 mb-1 h-4"
+                                    id="calc-history"></div>
+                                <div class="current-input text-3xl font-mono font-bold text-slate-800 dark:text-white overflow-x-auto no-scrollbar"
+                                    id="calc-display">0</div>
                             </div>
                             <div class="buttons-grid">
                                 <!-- Scientific Row 1 -->
                                 <button class="calc-btn btn-scientific" onclick="appendFunction('sin')">sin</button>
                                 <button class="calc-btn btn-scientific" onclick="appendFunction('cos')">cos</button>
                                 <button class="calc-btn btn-scientific" onclick="appendFunction('tan')">tan</button>
-                                <button class="calc-btn btn-operator" data-key="/" onclick="appendOperator('/')">÷</button>
+                                <button class="calc-btn btn-operator" data-key="/"
+                                    onclick="appendOperator('/')">÷</button>
 
                                 <!-- Scientific Row 2 -->
                                 <button class="calc-btn btn-scientific" onclick="appendFunction('log')">log</button>
                                 <button class="calc-btn btn-scientific" onclick="appendFunction('ln')">ln</button>
                                 <button class="calc-btn btn-scientific" onclick="appendOperator('^')">^</button>
-                                <button class="calc-btn btn-operator" data-key="*" onclick="appendOperator('*')">×</button>
+                                <button class="calc-btn btn-operator" data-key="*"
+                                    onclick="appendOperator('*')">×</button>
 
                                 <!-- Numbers -->
                                 <button class="calc-btn btn-number" data-key="7" onclick="appendNumber('7')">7</button>
                                 <button class="calc-btn btn-number" data-key="8" onclick="appendNumber('8')">8</button>
                                 <button class="calc-btn btn-number" data-key="9" onclick="appendNumber('9')">9</button>
-                                <button class="calc-btn btn-operator" data-key="-" onclick="appendOperator('-')">−</button>
+                                <button class="calc-btn btn-operator" data-key="-"
+                                    onclick="appendOperator('-')">−</button>
 
                                 <button class="calc-btn btn-number" data-key="4" onclick="appendNumber('4')">4</button>
                                 <button class="calc-btn btn-number" data-key="5" onclick="appendNumber('5')">5</button>
                                 <button class="calc-btn btn-number" data-key="6" onclick="appendNumber('6')">6</button>
-                                <button class="calc-btn btn-operator" data-key="+" onclick="appendOperator('+')">+</button>
+                                <button class="calc-btn btn-operator" data-key="+"
+                                    onclick="appendOperator('+')">+</button>
 
                                 <button class="calc-btn btn-number" data-key="1" onclick="appendNumber('1')">1</button>
                                 <button class="calc-btn btn-number" data-key="2" onclick="appendNumber('2')">2</button>
                                 <button class="calc-btn btn-number" data-key="3" onclick="appendNumber('3')">3</button>
-                                <button class="calc-btn btn-equals row-span-2" data-key="Enter" style="grid-row: span 2; height: auto;" onclick="calculate()">=</button>
+                                <button class="calc-btn btn-equals row-span-2" data-key="Enter"
+                                    style="grid-row: span 2; height: auto;" onclick="calculate()">=</button>
 
                                 <button class="calc-btn btn-number" data-key="0" onclick="appendNumber('0')">0</button>
                                 <button class="calc-btn btn-number" data-key="." onclick="appendNumber('.')">.</button>
-                                <button class="calc-btn btn-clear bg-red-500/20 text-red-500" data-key="Backspace" onclick="deleteLast()">⌫</button>
+                                <button class="calc-btn btn-clear bg-red-500/20 text-red-500" data-key="Backspace"
+                                    onclick="deleteLast()">⌫</button>
                             </div>
                             <div class="grid grid-cols-4 gap-3 mt-3">
-                                 <button class="calc-btn btn-clear bg-red-500/30 text-red-600 col-span-4" data-key="Escape" onclick="clearDisplay()">LIMPAR TUDO</button>
+                                <button class="calc-btn btn-clear bg-red-500/30 text-red-600 col-span-4"
+                                    data-key="Escape" onclick="clearDisplay()">LIMPAR TUDO</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="view-financeiro" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
-                     <!-- ... Conteúdo Financeiro (Mantido) ... -->
-                      <div class="max-w-md mx-auto">
-                        <div class="glass-panel p-6 rounded-[2rem] mb-6 relative overflow-hidden text-center group cursor-pointer hover:scale-[1.02] transition" onclick="setMonthlyBudget()">
-                            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-500/80 to-teal-600/80 z-0"></div>
-                            <div class="absolute top-0 right-0 p-4 opacity-20"><i data-lucide="wallet" class="w-24 h-24 text-white"></i></div>
+                <div id="view-financeiro"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                    <!-- ... Conteúdo Financeiro (Mantido) ... -->
+                    <div class="max-w-md mx-auto">
+                        <div class="glass-panel p-6 rounded-[2rem] mb-6 relative overflow-hidden text-center group cursor-pointer hover:scale-[1.02] transition"
+                            onclick="setMonthlyBudget()">
+                            <div
+                                class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-500/80 to-teal-600/80 z-0">
+                            </div>
+                            <div class="absolute top-0 right-0 p-4 opacity-20"><i data-lucide="wallet"
+                                    class="w-24 h-24 text-white"></i></div>
                             <div class="relative z-10 text-white">
-                                <p class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Orçamento Mensal</p>
+                                <p class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Orçamento Mensal
+                                </p>
                                 <h2 class="text-4xl font-black mb-2 flex items-center justify-center gap-2">
                                     <span id="fin-budget-display">R$ 0,00</span>
                                     <i data-lucide="edit-2" class="w-4 h-4 opacity-50"></i>
                                 </h2>
                                 <div class="w-full bg-black/20 h-2 rounded-full overflow-hidden mt-4">
-                                    <div id="fin-progress-bar" class="h-full bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: 0%"></div>
+                                    <div id="fin-progress-bar"
+                                        class="h-full bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                        style="width: 0%"></div>
                                 </div>
                                 <div class="flex justify-between text-[10px] font-bold mt-1 opacity-90">
                                     <span>Gasto: <span id="fin-total-spent">R$ 0,00</span></span>
@@ -474,247 +647,490 @@
                         </div>
                         <div class="flex justify-between items-center mb-4 px-2">
                             <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Extrato</h3>
-                            <button onclick="openAddTransactionModal()" class="text-xs glass-inner bg-emerald-100/50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-4 py-2 rounded-lg font-bold flex items-center gap-1">
+                            <button onclick="openAddTransactionModal()"
+                                class="text-xs glass-inner bg-emerald-100/50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-4 py-2 rounded-lg font-bold flex items-center gap-1">
                                 <i data-lucide="plus" class="w-3 h-3"></i> Adicionar
                             </button>
                         </div>
                         <div id="finance-list" class="space-y-3 pb-20"></div>
                     </div>
                 </div>
-                
-                <div id="view-onibus" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
-                     <!-- ... Conteúdo Onibus (Mantido) ... -->
-                      <div class="max-w-4xl mx-auto">
+
+                <div id="view-onibus"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                    <!-- ... Conteúdo Onibus (Mantido) ... -->
+                    <div class="max-w-4xl mx-auto">
                         <div class="glass-panel p-6 rounded-[2rem] mb-6 shadow-lg">
                             <div class="flex justify-between items-center mb-6">
                                 <h2 class="text-xl font-black text-indigo-900 dark:text-white">Horários</h2>
-                                <span class="glass-inner bg-green-100/50 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1 rounded-full text-[10px] font-bold border border-green-200/50 dark:border-green-800">2026.1</span>
+                                <span
+                                    class="glass-inner bg-green-100/50 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1 rounded-full text-[10px] font-bold border border-green-200/50 dark:border-green-800">2026.1</span>
                             </div>
-                            <div class="w-full overflow-x-auto rounded-xl border border-white/20 dark:border-white/10 max-w-[calc(100vw-3rem)]">
+                            <div
+                                class="w-full overflow-x-auto rounded-xl border border-white/20 dark:border-white/10 max-w-[calc(100vw-3rem)]">
                                 <table class="w-full text-sm text-left">
-                                    <thead class="text-xs text-gray-500 uppercase bg-white/20 dark:bg-white/5 backdrop-blur-sm">
-                                        <tr><th class="px-4 py-3 font-bold whitespace-nowrap">Saída</th><th class="px-4 py-3 font-bold whitespace-nowrap">Chegada</th><th class="px-4 py-3 font-bold whitespace-nowrap">Itinerário</th></tr>
+                                    <thead
+                                        class="text-xs text-gray-500 uppercase bg-white/20 dark:bg-white/5 backdrop-blur-sm">
+                                        <tr>
+                                            <th class="px-4 py-3 font-bold whitespace-nowrap">Saída</th>
+                                            <th class="px-4 py-3 font-bold whitespace-nowrap">Chegada</th>
+                                            <th class="px-4 py-3 font-bold whitespace-nowrap">Itinerário</th>
+                                        </tr>
                                     </thead>
-                                    <tbody id="bus-table-body" class="divide-y divide-white/20 dark:divide-white/10"></tbody>
+                                    <tbody id="bus-table-body" class="divide-y divide-white/20 dark:divide-white/10">
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
-                      </div>
+                    </div>
                 </div>
 
-                <div id="view-perfil" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
-                     <!-- ... Conteúdo Perfil (Mantido) ... -->
+                <div id="view-perfil"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                    <!-- ... Conteúdo Perfil (Mantido) ... -->
                     <div class="max-w-md mx-auto">
-                        <div class="glass-panel rounded-[2.5rem] p-8 text-center mb-6 flex flex-col items-center justify-center relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-20"></div>
-                            <div class="w-24 h-24 rounded-full glass-inner flex items-center justify-center text-indigo-600 text-3xl mb-4 profile-ring overflow-hidden z-10 shadow-xl backdrop-blur-md">
+                        <div
+                            class="glass-panel rounded-[2.5rem] p-8 text-center mb-6 flex flex-col items-center justify-center relative overflow-hidden">
+                            <div
+                                class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-20">
+                            </div>
+                            <div
+                                class="w-24 h-24 rounded-full glass-inner flex items-center justify-center text-indigo-600 text-3xl mb-4 profile-ring overflow-hidden z-10 shadow-xl backdrop-blur-md">
                                 <img id="profile-img" src="" class="w-full h-full object-cover bg-indigo-100">
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 tracking-tight relative z-10" id="profile-name">Carregando...</h2>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1 relative z-10" id="profile-username">@...</p>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mb-5 relative z-10" id="profile-course">...</p>
-                            <span class="glass-inner bg-amber-100/50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-6 py-1.5 rounded-full text-xs font-bold border border-amber-200/50 dark:border-amber-800 relative z-10">Nível 1</span>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 tracking-tight relative z-10"
+                                id="profile-name">Carregando...</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1 relative z-10"
+                                id="profile-username">@...</p>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mb-5 relative z-10"
+                                id="profile-course">...</p>
+                            <span
+                                class="glass-inner bg-amber-100/50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-6 py-1.5 rounded-full text-xs font-bold border border-amber-200/50 dark:border-amber-800 relative z-10">Nível
+                                1</span>
                         </div>
                         <div class="glass-panel rounded-[2rem] overflow-hidden shadow-sm mb-20">
-                            <button onclick="navigateTo('edit-profile')" class="w-full p-5 flex justify-between items-center hover:bg-white/30 dark:hover:bg-white/5 transition border-b border-white/20 dark:border-white/5 group">
-                                <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-slate-500 group-hover:text-indigo-500 transition"><i data-lucide="user-pen" class="w-4 h-4"></i></div><span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Editar Dados</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                            <button onclick="navigateTo('edit-profile')"
+                                class="w-full p-5 flex justify-between items-center hover:bg-white/30 dark:hover:bg-white/5 transition border-b border-white/20 dark:border-white/5 group">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-slate-500 group-hover:text-indigo-500 transition">
+                                        <i data-lucide="user-pen" class="w-4 h-4"></i>
+                                    </div><span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Editar
+                                        Dados</span>
+                                </div><i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
                             </button>
-                            <button onclick="navigateTo('config')" class="w-full p-5 flex justify-between items-center hover:bg-white/30 dark:hover:bg-white/5 transition border-b border-white/20 dark:border-white/5 group">
-                                <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-slate-500 group-hover:text-indigo-500 transition"><i data-lucide="settings" class="w-4 h-4"></i></div><span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Configurações</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                            <button onclick="navigateTo('config')"
+                                class="w-full p-5 flex justify-between items-center hover:bg-white/30 dark:hover:bg-white/5 transition border-b border-white/20 dark:border-white/5 group">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-slate-500 group-hover:text-indigo-500 transition">
+                                        <i data-lucide="settings" class="w-4 h-4"></i>
+                                    </div><span
+                                        class="text-sm font-semibold text-slate-700 dark:text-slate-200">Configurações</span>
+                                </div><i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
                             </button>
-                            <button onclick="logout()" class="w-full p-5 flex justify-between items-center hover:bg-red-500/10 dark:hover:bg-red-900/10 transition group">
-                                <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition"><i data-lucide="log-out" class="w-4 h-4"></i></div><span class="text-sm font-semibold text-red-500">Sair</span></div>
+                            <button onclick="logout()"
+                                class="w-full p-5 flex justify-between items-center hover:bg-red-500/10 dark:hover:bg-red-900/10 transition group">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition">
+                                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                                    </div><span class="text-sm font-semibold text-red-500">Sair</span>
+                                </div>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div id="view-notas" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll"></div>
-                
-                <div id="view-pomo" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll text-center">
+                <div id="view-notas"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll"></div>
+
+                <div id="view-pomo"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll text-center">
                     <!-- ... Conteúdo Pomo (Mantido) ... -->
                     <div class="max-w-md mx-auto pt-4">
-                        <div class="glass-panel p-8 rounded-full aspect-square flex flex-col items-center justify-center relative mb-8 mx-auto w-64 h-64 shadow-2xl">
-                             <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
-                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-200 dark:text-gray-700 opacity-20" />
-                                <circle id="timer-circle" cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="816" stroke-dashoffset="0" stroke-linecap="round" class="text-indigo-500 transition-all duration-1000" />
+                        <div
+                            class="glass-panel p-8 rounded-full aspect-square flex flex-col items-center justify-center relative mb-8 mx-auto w-64 h-64 shadow-2xl">
+                            <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
+                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="8"
+                                    fill="transparent" class="text-gray-200 dark:text-gray-700 opacity-20" />
+                                <circle id="timer-circle" cx="50%" cy="50%" r="45%" stroke="currentColor"
+                                    stroke-width="8" fill="transparent" stroke-dasharray="816" stroke-dashoffset="0"
+                                    stroke-linecap="round" class="text-indigo-500 transition-all duration-1000" />
                             </svg>
                             <div class="relative z-10 flex flex-col items-center">
-                                <span id="timer-display" class="text-5xl font-mono font-bold tracking-tighter text-slate-800 dark:text-white">25:00</span>
-                                <span id="timer-label" class="text-sm font-bold uppercase tracking-widest text-indigo-500 mt-2 bg-indigo-100/50 dark:bg-indigo-900/30 px-3 py-1 rounded-full">Foco</span>
+                                <span id="timer-display"
+                                    class="text-5xl font-mono font-bold tracking-tighter text-slate-800 dark:text-white">25:00</span>
+                                <span id="timer-label"
+                                    class="text-sm font-bold uppercase tracking-widest text-indigo-500 mt-2 bg-indigo-100/50 dark:bg-indigo-900/30 px-3 py-1 rounded-full">Foco</span>
                             </div>
                         </div>
                         <div class="flex justify-center gap-4 mb-8">
-                            <button onclick="toggleTimer()" id="btn-timer-start" class="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-lg hover:scale-105 transition"><i data-lucide="play" class="w-8 h-8 fill-current"></i></button>
-                            <button onclick="resetTimer()" class="w-16 h-16 rounded-full glass-inner text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-white/40 transition"><i data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
+                            <button onclick="toggleTimer()" id="btn-timer-start"
+                                class="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-lg hover:scale-105 transition"><i
+                                    data-lucide="play" class="w-8 h-8 fill-current"></i></button>
+                            <button onclick="resetTimer()"
+                                class="w-16 h-16 rounded-full glass-inner text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-white/40 transition"><i
+                                    data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
                         </div>
                         <div class="flex justify-center gap-2 mb-20">
-                            <button onclick="setTimerMode('pomodoro')" class="px-4 py-2 rounded-xl text-sm font-bold bg-white/40 dark:bg-white/10 text-indigo-600 dark:text-indigo-400">Foco</button>
-                            <button onclick="setTimerMode('short')" class="px-4 py-2 rounded-xl text-sm font-bold glass-inner text-gray-500">Curta</button>
-                            <button onclick="setTimerMode('long')" class="px-4 py-2 rounded-xl text-sm font-bold glass-inner text-gray-500">Longa</button>
-                        </div>
-                      </div>
-                </div>
-
-                <div id="view-sounds" class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
-                      <!-- ... Conteúdo Sounds (Mantido) ... -->
-                      <div class="max-w-4xl mx-auto">
-                        <h2 class="text-2xl font-bold text-center mb-2 dark:text-white">Estúdio de Foco 🎧</h2>
-                        <p class="text-center text-gray-500 mb-8">Bloqueie distrações.</p>
-                        <div class="grid grid-cols-2 gap-4 pb-20">
-                            <div onclick="toggleSound('rain')" id="card-rain" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent"><i data-lucide="cloud-rain" class="w-10 h-10 text-blue-400 group-hover:scale-110 transition"></i><span class="font-bold dark:text-white">Chuva</span><audio id="audio-rain" loop src="https://files.catbox.moe/jvpszl.mp3"></audio></div>
-                            <div onclick="toggleSound('lofi')" id="card-lofi" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent"><i data-lucide="music" class="w-10 h-10 text-purple-400 group-hover:scale-110 transition"></i><span class="font-bold dark:text-white">Lo-Fi</span><audio id="audio-lofi" loop src="https://files.catbox.moe/jjtvye.mp3"></audio></div>
-                            <div onclick="toggleSound('cafe')" id="card-cafe" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent"><i data-lucide="coffee" class="w-10 h-10 text-amber-400 group-hover:scale-110 transition"></i><span class="font-bold dark:text-white">Cafeteria</span><audio id="audio-cafe" loop src="https://files.catbox.moe/5dic2l.mp3"></audio></div>
-                            <div onclick="toggleSound('forest')" id="card-forest" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent"><i data-lucide="trees" class="w-10 h-10 text-green-400 group-hover:scale-110 transition"></i><span class="font-bold dark:text-white">Natureza</span><audio id="audio-forest" loop src="https://files.catbox.moe/u8zj85.mp3"></audio></div>
-                        </div>
-                      </div>
-                </div>
-
-                <div id="view-edit-profile" class="page-view hidden h-full overflow-y-auto px-4 pt-2 mobile-padding hide-scroll">
-                    <!-- ... Conteúdo Edit Profile (Mantido) ... -->
-                     <div class="max-w-md mx-auto">
-                        <div class="glass-panel p-6 rounded-[2rem] shadow-sm space-y-5">
-                            <div class="flex flex-col items-center mb-6">
-                                <div class="w-24 h-24 rounded-full overflow-hidden shadow-lg border-2 border-indigo-100 mb-3 relative group">
-                                    <img id="edit-profile-preview" src="" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer" onclick="document.getElementById('file-upload').click()">
-                                        <i data-lucide="camera" class="text-white w-8 h-8"></i>
-                                    </div>
-                                </div>
-                                <input type="file" id="file-upload" class="hidden" accept="image/*" onchange="window.uploadToImgur(this)">
-                                <button onclick="document.getElementById('file-upload').click()" class="text-xs font-bold text-indigo-600 dark:text-indigo-400">Alterar Foto</button>
-                                <p id="upload-status" class="text-[10px] text-gray-400 mt-1"></p>
-                            </div>
-
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome</label><input type="text" id="edit-name" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Usuário</label><input type="text" id="edit-username" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label><input type="text" id="edit-course" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Semestre</label><input type="text" id="edit-semester" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
-                            <button onclick="saveProfileChanges()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg mt-4">Salvar</button>
+                            <button onclick="setTimerMode('pomodoro')"
+                                class="px-4 py-2 rounded-xl text-sm font-bold bg-white/40 dark:bg-white/10 text-indigo-600 dark:text-indigo-400">Foco</button>
+                            <button onclick="setTimerMode('short')"
+                                class="px-4 py-2 rounded-xl text-sm font-bold glass-inner text-gray-500">Curta</button>
+                            <button onclick="setTimerMode('long')"
+                                class="px-4 py-2 rounded-xl text-sm font-bold glass-inner text-gray-500">Longa</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="view-config" class="page-view hidden h-full overflow-y-auto px-4 pt-2 mobile-padding hide-scroll"><div class="max-w-md mx-auto"><div class="glass-panel p-6 rounded-[2rem] shadow-sm space-y-6"><div><h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Estilo do Widget</h3><div class="space-y-3"><label class="flex items-center justify-between p-4 rounded-xl glass-inner cursor-pointer" onclick="setWidgetStyle('modern')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-indigo-100/50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600"><i data-lucide="smartphone" class="w-5 h-5"></i></div><div><p class="font-bold text-gray-800 dark:text-white">Moderno</p></div></div><div class="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center widget-check" id="check-modern"></div></label><label class="flex items-center justify-between p-4 rounded-xl glass-inner cursor-pointer" onclick="setWidgetStyle('classic')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-slate-100/50 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"><i data-lucide="layout-template" class="w-5 h-5"></i></div><div><p class="font-bold text-gray-800 dark:text-white">Clássico</p></div></div><div class="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center widget-check" id="check-classic"></div></label></div></div></div></div></div>
+                <div id="view-sounds"
+                    class="page-view hidden h-full overflow-y-auto px-4 md:px-0 pt-2 mobile-padding hide-scroll">
+                    <!-- ... Conteúdo Sounds (Mantido) ... -->
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-2xl font-bold text-center mb-2 dark:text-white">Estúdio de Foco 🎧</h2>
+                        <p class="text-center text-gray-500 mb-8">Bloqueie distrações.</p>
+                        <div class="grid grid-cols-2 gap-4 pb-20">
+                            <div onclick="toggleSound('rain')" id="card-rain"
+                                class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent">
+                                <i data-lucide="cloud-rain"
+                                    class="w-10 h-10 text-blue-400 group-hover:scale-110 transition"></i><span
+                                    class="font-bold dark:text-white">Chuva</span><audio id="audio-rain" loop
+                                    src="https://files.catbox.moe/jvpszl.mp3"></audio>
+                            </div>
+                            <div onclick="toggleSound('lofi')" id="card-lofi"
+                                class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent">
+                                <i data-lucide="music"
+                                    class="w-10 h-10 text-purple-400 group-hover:scale-110 transition"></i><span
+                                    class="font-bold dark:text-white">Lo-Fi</span><audio id="audio-lofi" loop
+                                    src="https://files.catbox.moe/jjtvye.mp3"></audio>
+                            </div>
+                            <div onclick="toggleSound('cafe')" id="card-cafe"
+                                class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent">
+                                <i data-lucide="coffee"
+                                    class="w-10 h-10 text-amber-400 group-hover:scale-110 transition"></i><span
+                                    class="font-bold dark:text-white">Cafeteria</span><audio id="audio-cafe" loop
+                                    src="https://files.catbox.moe/5dic2l.mp3"></audio>
+                            </div>
+                            <div onclick="toggleSound('forest')" id="card-forest"
+                                class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/40 transition group border-2 border-transparent">
+                                <i data-lucide="trees"
+                                    class="w-10 h-10 text-green-400 group-hover:scale-110 transition"></i><span
+                                    class="font-bold dark:text-white">Natureza</span><audio id="audio-forest" loop
+                                    src="https://files.catbox.moe/u8zj85.mp3"></audio>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-edit-profile"
+                    class="page-view hidden h-full overflow-y-auto px-4 pt-2 mobile-padding hide-scroll">
+                    <!-- ... Conteúdo Edit Profile (Mantido) ... -->
+                    <div class="max-w-md mx-auto">
+                        <div class="glass-panel p-6 rounded-[2rem] shadow-sm space-y-5">
+                            <div class="flex flex-col items-center mb-6">
+                                <div
+                                    class="w-24 h-24 rounded-full overflow-hidden shadow-lg border-2 border-indigo-100 mb-3 relative group">
+                                    <img id="edit-profile-preview" src="" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                        onclick="document.getElementById('file-upload').click()">
+                                        <i data-lucide="camera" class="text-white w-8 h-8"></i>
+                                    </div>
+                                </div>
+                                <input type="file" id="file-upload" class="hidden" accept="image/*"
+                                    onchange="window.uploadToImgur(this)">
+                                <button onclick="document.getElementById('file-upload').click()"
+                                    class="text-xs font-bold text-indigo-600 dark:text-indigo-400">Alterar Foto</button>
+                                <p id="upload-status" class="text-[10px] text-gray-400 mt-1"></p>
+                            </div>
+
+                            <div><label
+                                    class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome</label><input
+                                    type="text" id="edit-name"
+                                    class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
+                            <div><label
+                                    class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Usuário</label><input
+                                    type="text" id="edit-username"
+                                    class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
+                            <div><label
+                                    class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label><input
+                                    type="text" id="edit-course"
+                                    class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
+                            <div><label
+                                    class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Semestre</label><input
+                                    type="text" id="edit-semester"
+                                    class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"></div>
+                            <button onclick="saveProfileChanges()"
+                                class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg mt-4">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-config"
+                    class="page-view hidden h-full overflow-y-auto px-4 pt-2 mobile-padding hide-scroll">
+                    <div class="max-w-md mx-auto">
+                        <div class="glass-panel p-6 rounded-[2rem] shadow-sm space-y-6">
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Estilo do
+                                    Widget</h3>
+                                <div class="space-y-3"><label
+                                        class="flex items-center justify-between p-4 rounded-xl glass-inner cursor-pointer"
+                                        onclick="setWidgetStyle('modern')">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-10 h-10 rounded-lg bg-indigo-100/50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                                                <i data-lucide="smartphone" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-gray-800 dark:text-white">Moderno</p>
+                                            </div>
+                                        </div>
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center widget-check"
+                                            id="check-modern"></div>
+                                    </label><label
+                                        class="flex items-center justify-between p-4 rounded-xl glass-inner cursor-pointer"
+                                        onclick="setWidgetStyle('classic')">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-10 h-10 rounded-lg bg-slate-100/50 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                                                <i data-lucide="layout-template" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-gray-800 dark:text-white">Clássico</p>
+                                            </div>
+                                        </div>
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center widget-check"
+                                            id="check-classic"></div>
+                                    </label></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </main>
 
         <!-- MENU MOBILE FLUTUANTE (DOCK FIXO) -->
         <nav class="md:hidden glass-nav flex justify-around items-center px-2 z-[40]">
-            <button onclick="navigateTo('home')" id="mob-nav-home" class="mobile-nav-item active flex flex-col items-center justify-center w-12 h-full text-indigo-600 transition-all"><i data-lucide="layout-dashboard" class="w-6 h-6"></i></button>
-            <button onclick="navigateTo('aulas')" id="mob-nav-aulas" class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i data-lucide="book-open" class="w-6 h-6"></i></button>
+            <button onclick="navigateTo('home')" id="mob-nav-home"
+                class="mobile-nav-item active flex flex-col items-center justify-center w-12 h-full text-indigo-600 transition-all"><i
+                    data-lucide="layout-dashboard" class="w-6 h-6"></i></button>
+            <button onclick="navigateTo('aulas')" id="mob-nav-aulas"
+                class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i
+                    data-lucide="book-open" class="w-6 h-6"></i></button>
             <button onclick="navigateTo('ia')" id="mob-nav-ia" class="mobile-nav-item -mt-8">
-                <div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white/40 dark:border-slate-800 transform active:scale-90 transition-transform shadow-indigo-500/40 backdrop-blur-md">
+                <div
+                    class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white/40 dark:border-slate-800 transform active:scale-90 transition-transform shadow-indigo-500/40 backdrop-blur-md">
                     <!-- ÍCONE IA REVERTIDO -->
                     <i data-lucide="sparkles" class="w-6 h-6"></i>
                 </div>
             </button>
-            <button onclick="navigateTo('ferramentas')" id="mob-nav-ferramentas" class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i data-lucide="wrench" class="w-6 h-6"></i></button>
-            <button onclick="navigateTo('onibus')" id="mob-nav-onibus" class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i data-lucide="bus" class="w-6 h-6"></i></button>
+            <button onclick="navigateTo('ferramentas')" id="mob-nav-ferramentas"
+                class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i
+                    data-lucide="wrench" class="w-6 h-6"></i></button>
+            <button onclick="navigateTo('onibus')" id="mob-nav-onibus"
+                class="mobile-nav-item flex flex-col items-center justify-center w-12 h-full text-gray-400 transition-all"><i
+                    data-lucide="bus" class="w-6 h-6"></i></button>
         </nav>
 
         <!-- MODAIS (Mantidos todos iguais) -->
-        <div id="class-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden h-[85vh] overflow-y-auto no-scrollbar">
+        <div id="class-modal"
+            class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden h-[85vh] overflow-y-auto no-scrollbar">
                 <div class="flex justify-between items-center mb-6 sticky top-0 z-10 pb-2">
                     <h3 class="text-xl font-bold text-slate-800 dark:text-white" id="modal-title">Nova Aula</h3>
-                    <button onclick="toggleModal(false)" class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-gray-500 hover:bg-white/40 transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    <button onclick="toggleModal(false)"
+                        class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-gray-500 hover:bg-white/40 transition"><i
+                            data-lucide="x" class="w-4 h-4"></i></button>
                 </div>
                 <input type="hidden" id="class-id">
                 <div class="space-y-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Matéria</label><input type="text" id="class-name" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Ex: Cálculo I"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Professor</label><input type="text" id="class-prof" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Ex: Dr. Silva"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Sala / Local</label><input type="text" id="class-room" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm" placeholder="Ex: PAV I - Sala 10"></div>
+                    <div><label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Matéria</label><input
+                            type="text" id="class-name"
+                            class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"
+                            placeholder="Ex: Cálculo I"></div>
+                    <div><label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Professor</label><input
+                            type="text" id="class-prof"
+                            class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"
+                            placeholder="Ex: Dr. Silva"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Sala /
+                            Local</label><input type="text" id="class-room"
+                            class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm"
+                            placeholder="Ex: PAV I - Sala 10"></div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Dia da Semana</label><select id="class-day" class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none"><option value="seg">Segunda</option><option value="ter">Terça</option><option value="qua">Quarta</option><option value="qui">Quinta</option><option value="sex">Sexta</option><option value="sab">Sábado</option></select></div>
-                        <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Início</label><select id="class-start" onchange="autoSetEndTime()" class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none"></select></div>
-                        <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Término</label><select id="class-end" class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none"></select></div>
+                        <div class="col-span-2"><label
+                                class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Dia da
+                                Semana</label><select id="class-day"
+                                class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none">
+                                <option value="seg">Segunda</option>
+                                <option value="ter">Terça</option>
+                                <option value="qua">Quarta</option>
+                                <option value="qui">Quinta</option>
+                                <option value="sex">Sexta</option>
+                                <option value="sab">Sábado</option>
+                            </select></div>
+                        <div><label
+                                class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Início</label><select
+                                id="class-start" onchange="autoSetEndTime()"
+                                class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none"></select>
+                        </div>
+                        <div><label
+                                class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Término</label><select
+                                id="class-end"
+                                class="w-full input-glass rounded-xl px-3 py-3 outline-none text-sm appearance-none"></select>
+                        </div>
                     </div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Cor do Card</label><div class="flex gap-3 justify-center" id="color-picker-container"></div></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Cor do
+                            Card</label>
+                        <div class="flex gap-3 justify-center" id="color-picker-container"></div>
+                    </div>
                 </div>
                 <div class="mt-8 flex gap-3 pb-4">
-                    <button id="btn-delete-class" onclick="requestDeleteClass()" class="hidden px-4 py-3 rounded-xl bg-red-500/10 text-red-500 font-bold text-sm hover:bg-red-500/20 transition glass-inner border-red-500/20"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                    <button onclick="saveClass()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition active:scale-95">Salvar Aula</button>
+                    <button id="btn-delete-class" onclick="requestDeleteClass()"
+                        class="hidden px-4 py-3 rounded-xl bg-red-500/10 text-red-500 font-bold text-sm hover:bg-red-500/20 transition glass-inner border-red-500/20"><i
+                            data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <button onclick="saveClass()"
+                        class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition active:scale-95">Salvar
+                        Aula</button>
                 </div>
             </div>
         </div>
 
-        <div id="delete-confirm-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/50 backdrop-blur-md opacity-0 transition-opacity duration-300"><div class="modal-glass w-full max-w-xs p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center"><div class="w-16 h-16 rounded-full glass-inner flex items-center justify-center mx-auto mb-4 text-red-500 bg-red-100/30 border-red-200/20"><i data-lucide="alert-triangle" class="w-8 h-8"></i></div><h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Excluir Aula?</h3><p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Essa ação não pode ser desfeita. Tem certeza?</p><div class="flex gap-3 justify-center"><button onclick="closeDeleteModal()" class="px-5 py-3 rounded-xl glass-inner text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white/40 transition">Cancelar</button><button onclick="confirmDeleteClass()" class="px-5 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/30 transition">Sim, Excluir</button></div></div></div>
-        
-        <div id="finance-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
+        <div id="delete-confirm-modal"
+            class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/50 backdrop-blur-md opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-xs p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
+                <div
+                    class="w-16 h-16 rounded-full glass-inner flex items-center justify-center mx-auto mb-4 text-red-500 bg-red-100/30 border-red-200/20">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Excluir Aula?</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Essa ação não pode ser desfeita. Tem certeza?
+                </p>
+                <div class="flex gap-3 justify-center"><button onclick="closeDeleteModal()"
+                        class="px-5 py-3 rounded-xl glass-inner text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white/40 transition">Cancelar</button><button
+                        onclick="confirmDeleteClass()"
+                        class="px-5 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/30 transition">Sim,
+                        Excluir</button></div>
+            </div>
+        </div>
+
+        <div id="finance-modal"
+            class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Adicionar Gasto</h3>
-                <input type="text" id="fin-desc" placeholder="Descrição (ex: Lanche)" class="w-full input-glass rounded-xl px-4 py-3 mb-3 outline-none text-sm">
-                <input type="number" id="fin-val" placeholder="Valor (ex: 15.50)" class="w-full input-glass rounded-xl px-4 py-3 mb-4 outline-none text-sm">
+                <input type="text" id="fin-desc" placeholder="Descrição (ex: Lanche)"
+                    class="w-full input-glass rounded-xl px-4 py-3 mb-3 outline-none text-sm">
+                <input type="number" id="fin-val" placeholder="Valor (ex: 15.50)"
+                    class="w-full input-glass rounded-xl px-4 py-3 mb-4 outline-none text-sm">
                 <div class="flex gap-2">
-                    <button onclick="closeFinanceModal()" class="flex-1 py-3 glass-inner text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm">Cancelar</button>
-                    <button onclick="addTransaction()" class="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl text-sm shadow-lg">Salvar</button>
+                    <button onclick="closeFinanceModal()"
+                        class="flex-1 py-3 glass-inner text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm">Cancelar</button>
+                    <button onclick="addTransaction()"
+                        class="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl text-sm shadow-lg">Salvar</button>
                 </div>
             </div>
         </div>
 
-        <div id="task-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
+        <div id="task-modal"
+            class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Nova Tarefa</h3>
-                <input type="text" id="new-task-title" placeholder="O que precisa ser feito?" class="w-full input-glass rounded-xl px-4 py-3 mb-3 outline-none text-sm">
-                <input type="datetime-local" id="new-task-date" class="w-full input-glass rounded-xl px-4 py-3 mb-4 outline-none text-sm text-gray-500">
+                <input type="text" id="new-task-title" placeholder="O que precisa ser feito?"
+                    class="w-full input-glass rounded-xl px-4 py-3 mb-3 outline-none text-sm">
+                <input type="datetime-local" id="new-task-date"
+                    class="w-full input-glass rounded-xl px-4 py-3 mb-4 outline-none text-sm text-gray-500">
                 <div class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                    <button onclick="selectTaskCategory('estudo')" id="cat-estudo" class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-blue-200 bg-blue-100/50 text-blue-600 glass-inner">Estudo</button>
-                    <button onclick="selectTaskCategory('prova')" id="cat-prova" class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-red-200 bg-red-100/50 text-red-600 opacity-50 glass-inner">Prova</button>
-                    <button onclick="selectTaskCategory('trabalho')" id="cat-trabalho" class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-orange-200 bg-orange-100/50 text-orange-600 opacity-50 glass-inner">Trabalho</button>
-                    <button onclick="selectTaskCategory('pessoal')" id="cat-pessoal" class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-green-200 bg-green-100/50 text-green-600 opacity-50 glass-inner">Pessoal</button>
+                    <button onclick="selectTaskCategory('estudo')" id="cat-estudo"
+                        class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-blue-200 bg-blue-100/50 text-blue-600 glass-inner">Estudo</button>
+                    <button onclick="selectTaskCategory('prova')" id="cat-prova"
+                        class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-red-200 bg-red-100/50 text-red-600 opacity-50 glass-inner">Prova</button>
+                    <button onclick="selectTaskCategory('trabalho')" id="cat-trabalho"
+                        class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-orange-200 bg-orange-100/50 text-orange-600 opacity-50 glass-inner">Trabalho</button>
+                    <button onclick="selectTaskCategory('pessoal')" id="cat-pessoal"
+                        class="cat-btn px-3 py-1 rounded-full text-xs font-bold border border-green-200 bg-green-100/50 text-green-600 opacity-50 glass-inner">Pessoal</button>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="closeTaskModal()" class="flex-1 py-3 glass-inner text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm">Cancelar</button>
-                    <button onclick="confirmAddTask()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-sm shadow-lg">Adicionar</button>
+                    <button onclick="closeTaskModal()"
+                        class="flex-1 py-3 glass-inner text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm">Cancelar</button>
+                    <button onclick="confirmAddTask()"
+                        class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-sm shadow-lg">Adicionar</button>
                 </div>
             </div>
         </div>
 
-        <div id="custom-input-modal" class="fixed inset-0 z-[90] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
+        <div id="custom-input-modal"
+            class="fixed inset-0 z-[90] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300">
                 <h3 id="custom-modal-title" class="text-lg font-bold text-slate-800 dark:text-white mb-4">Título</h3>
-                <input type="text" id="custom-modal-input" class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm mb-6">
+                <input type="text" id="custom-modal-input"
+                    class="w-full input-glass rounded-xl px-4 py-3 outline-none text-sm mb-6">
                 <div class="flex justify-end gap-3">
-                    <button id="custom-modal-cancel" class="px-4 py-2 rounded-xl glass-inner text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-300/50 transition">Cancelar</button>
-                    <button id="custom-modal-confirm" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-lg hover:bg-indigo-700 transition">Confirmar</button>
+                    <button id="custom-modal-cancel"
+                        class="px-4 py-2 rounded-xl glass-inner text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-300/50 transition">Cancelar</button>
+                    <button id="custom-modal-confirm"
+                        class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-lg hover:bg-indigo-700 transition">Confirmar</button>
                 </div>
             </div>
         </div>
-        
-        <div id="generic-modal" class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"><div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center"><h3 id="generic-modal-title" class="text-lg font-bold text-slate-800 dark:text-white mb-2">Aviso</h3><p id="generic-modal-message" class="text-sm text-gray-500 dark:text-gray-400 mb-6">Mensagem</p><button onclick="closeGenericModal()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Entendi</button></div></div>
-        
+
+        <div id="generic-modal"
+            class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
+                <h3 id="generic-modal-title" class="text-lg font-bold text-slate-800 dark:text-white mb-2">Aviso</h3>
+                <p id="generic-modal-message" class="text-sm text-gray-500 dark:text-gray-400 mb-6">Mensagem</p><button
+                    onclick="closeGenericModal()"
+                    class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Entendi</button>
+            </div>
+        </div>
+
         <!-- MODAL DE DOAÇÃO/PAGAMENTO -->
-        <div id="payment-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-200 dark:border-slate-700 text-center relative">
-                <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+        <div id="payment-modal"
+            class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-200 dark:border-slate-700 text-center relative">
+                <button onclick="closePaymentModal()"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
 
                 <div class="mb-4">
-                    <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2 text-amber-500">
-                         <i data-lucide="qr-code" class="w-6 h-6"></i>
+                    <div
+                        class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2 text-amber-500">
+                        <i data-lucide="qr-code" class="w-6 h-6"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">Pagamento PIX</h3>
                     <p class="text-sm text-gray-500 mt-1">Apoie o projeto instantaneamente.</p>
                 </div>
 
-                <div class="bg-white p-2 rounded-xl shadow-inner border border-gray-200 mx-auto w-48 h-48 flex items-center justify-center mb-4 relative overflow-hidden">
-                    <img id="pix-qr-image" class="w-full h-full object-contain opacity-50 transition-opacity duration-300" src="">
+                <div
+                    class="bg-white p-2 rounded-xl shadow-inner border border-gray-200 mx-auto w-48 h-48 flex items-center justify-center mb-4 relative overflow-hidden">
+                    <img id="pix-qr-image"
+                        class="w-full h-full object-contain opacity-50 transition-opacity duration-300" src="">
                     <div id="pix-loading" class="absolute inset-0 flex items-center justify-center bg-white/80">
                         <i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 animate-spin"></i>
                     </div>
                 </div>
 
                 <div class="mb-4 relative group">
-                    <input type="text" id="pix-copy-paste" class="w-full text-[10px] bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-gray-500 font-mono truncate outline-none pr-10" readonly value="...">
-                     <button onclick="copyPixCode()" class="absolute right-2 top-2 p-1 text-gray-400 hover:text-indigo-600 transition">
+                    <input type="text" id="pix-copy-paste"
+                        class="w-full text-[10px] bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-gray-500 font-mono truncate outline-none pr-10"
+                        readonly value="...">
+                    <button onclick="copyPixCode()"
+                        class="absolute right-2 top-2 p-1 text-gray-400 hover:text-indigo-600 transition">
                         <i data-lucide="copy" class="w-4 h-4"></i>
                     </button>
                 </div>
-                
-                <button onclick="copyPixCode()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95">
+
+                <button onclick="copyPixCode()"
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95">
                     <span>Copiar Código PIX</span>
                 </button>
 
@@ -723,28 +1139,41 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- MODAL DE VALOR DE DOAÇÃO -->
-         <div id="donation-value-modal" class="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-            <div class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
+        <div id="donation-value-modal"
+            class="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div
+                class="modal-glass w-full max-w-sm p-6 mx-4 rounded-[2rem] shadow-2xl transform scale-95 transition-transform duration-300 text-center">
                 <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Apoiar o Projeto ❤️</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Escolha um valor para ajudar a manter o servidor online.</p>
-                
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Escolha um valor para ajudar a manter o
+                    servidor online.</p>
+
                 <div class="grid grid-cols-3 gap-3 mb-4">
-                    <button onclick="selectDonationValue(6)" class="py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition">R$ 6</button>
-                    <button onclick="selectDonationValue(15)" class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$ 15</button>
-                    <button onclick="selectDonationValue(30)" class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$ 30</button>
-                </div>
-                
-                <div class="relative mb-6">
-                    <span class="absolute left-4 top-3.5 text-gray-400 font-bold">R$</span>
-                    <input type="number" id="custom-donation-input" class="w-full input-glass rounded-xl pl-10 pr-4 py-3 outline-none text-sm font-bold" placeholder="Outro valor..." oninput="checkCustomValue()">
+                    <button onclick="selectDonationValue(6)"
+                        class="py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition">R$
+                        6</button>
+                    <button onclick="selectDonationValue(15)"
+                        class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$
+                        15</button>
+                    <button onclick="selectDonationValue(30)"
+                        class="py-3 rounded-xl border border-indigo-200 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 transition">R$
+                        30</button>
                 </div>
 
-                <button onclick="proceedToCpf()" id="btn-proceed-donation" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <div class="relative mb-6">
+                    <span class="absolute left-4 top-3.5 text-gray-400 font-bold">R$</span>
+                    <input type="number" id="custom-donation-input"
+                        class="w-full input-glass rounded-xl pl-10 pr-4 py-3 outline-none text-sm font-bold"
+                        placeholder="Outro valor..." oninput="checkCustomValue()">
+                </div>
+
+                <button onclick="proceedToCpf()" id="btn-proceed-donation"
+                    class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     Continuar
                 </button>
-                <button onclick="closeDonationModal()" class="mt-3 text-xs text-gray-400 font-bold hover:text-gray-600">Cancelar</button>
+                <button onclick="closeDonationModal()"
+                    class="mt-3 text-xs text-gray-400 font-bold hover:text-gray-600">Cancelar</button>
             </div>
         </div>
 
@@ -753,4 +1182,5 @@
     <!-- APP LOGIC -->
     <script type="module" src="script.js"></script>
 </body>
+
 </html>
