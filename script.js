@@ -1828,3 +1828,27 @@ window.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash.replace('#', '') || 'home';
     if (window.navigateTo) window.navigateTo(hash);
 });
+
+// --- COLE ISSO NO FINAL DO SEU SCRIPT.JS ---
+
+async function checkPaymentStatus() {
+    if (!currentPaymentId) return;
+    try {
+        const response = await fetch('/api/check_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentPaymentId })
+        });
+        const data = await response.json();
+
+        if (data.paid) {
+            clearInterval(paymentCheckInterval);
+            window.closePaymentModal();
+            // Toca um som de sucesso ou exibe mensagem
+            if (window.showModal) window.showModal("Pagamento Recebido!", "Muito obrigado pelo seu apoio! ❤️");
+            else alert("Pagamento Recebido! Muito obrigado ❤️");
+        }
+    } catch (e) {
+        console.log("Aguardando pagamento...", e);
+    }
+}
