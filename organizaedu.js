@@ -78,40 +78,44 @@ export class OrganizaIA {
         const { type, data } = action;
 
         // Mapeia os comandos da IA para as funções do site
-        switch (type) {
-            case 'create_class':
-                if (this.callbacks.addClass) this.callbacks.addClass(data);
-                break;
-            case 'delete_class':
-                if (this.callbacks.deleteClass) this.callbacks.deleteClass(data.id);
-                break;
-            case 'create_task':
-                if (this.callbacks.addTask) this.callbacks.addTask(data);
-                break;
-            case 'delete_task':
-                if (this.callbacks.deleteTask) this.callbacks.deleteTask(data.id);
-                break;
-            case 'create_transaction':
-                if (this.callbacks.addTransaction) this.callbacks.addTransaction(data);
-                break;
-            // NOVOS COMANDOS
-            case 'create_note':
-                if (this.callbacks.createNote) this.callbacks.createNote(data);
-                break;
-            case 'control_timer':
-                if (this.callbacks.controlTimer) this.callbacks.controlTimer(data);
-                break;
-            case 'add_grade':
-                if (this.callbacks.addGrade) this.callbacks.addGrade(data);
-                break;
-            case 'change_theme':
-                if (this.callbacks.changeTheme) this.callbacks.changeTheme(data);
-                break;
-            case 'set_style':
-                if (this.callbacks.setWidgetStyle) this.callbacks.setWidgetStyle(data);
-                break;
-            default:
-                console.warn("Ação desconhecida da IA:", type);
+        // Usa blocos try-catch individuais para garantir que uma falha não pare tudo
+        try {
+            switch (type) {
+                case 'create_class':
+                    if (this.callbacks.addClass) this.callbacks.addClass(data);
+                    break;
+                case 'delete_class':
+                    if (this.callbacks.deleteClass) this.callbacks.deleteClass(data.id);
+                    break;
+                case 'create_task':
+                    if (this.callbacks.addTask) this.callbacks.addTask(data);
+                    break;
+                case 'delete_task':
+                    if (this.callbacks.deleteTask) this.callbacks.deleteTask(data.id);
+                    break;
+                case 'create_transaction':
+                    if (this.callbacks.addTransaction) this.callbacks.addTransaction(data);
+                    break;
+                case 'create_note':
+                    if (this.callbacks.createNote) this.callbacks.createNote(data);
+                    break;
+                case 'control_timer':
+                    if (this.callbacks.controlTimer) this.callbacks.controlTimer(data);
+                    break;
+                case 'add_grade':
+                    if (this.callbacks.addGrade) this.callbacks.addGrade(data);
+                    break;
+                case 'change_theme':
+                    if (this.callbacks.changeTheme) this.callbacks.changeTheme(data);
+                    break;
+                case 'set_style':
+                    if (this.callbacks.setWidgetStyle) this.callbacks.setWidgetStyle(data);
+                    break;
+                default:
+                    console.warn("Ação desconhecida da IA:", type);
+            }
+        } catch (err) {
+            console.error("Erro ao executar ação da IA:", err);
         }
     }
 }

@@ -654,12 +654,9 @@ window.setAIProvider = function (provider) {
     }
 }
 
-// SUBSTITUA A FUNÇÃO sendMessage POR ESTA:
-
 window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!currentUser) return;
 
-    // Se não tiver chat ativo, cria um novo
     if (!activeChatId) {
         await startNewChat();
         await new Promise(r => setTimeout(r, 100));
@@ -687,10 +684,10 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
         // --- OTIMIZAÇÃO CRÍTICA PARA MOBILE ---
         // Evita erro de "Sobrecarregada" enviando apenas dados essenciais
 
-        // Pega apenas as 5 últimas notas e corta textos muito longos
+        // Pega apenas as 5 últimas notas e corta textos muito longos (max 150 caracteres)
         const optimizedNotes = notesData.slice(0, 5).map(n => ({
             title: n.title,
-            content: n.content ? n.content.substring(0, 150) + "..." : "",
+            content: n.content ? (n.content.length > 150 ? n.content.substring(0, 150) + "..." : n.content) : "",
             date: new Date(n.updatedAt).toLocaleDateString()
         }));
 
@@ -727,7 +724,6 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
         });
     }
 }
-
 // HELPER: Extrai dados do ônibus para o contexto da IA
 function getNextBusForContext() {
     const now = new Date();
