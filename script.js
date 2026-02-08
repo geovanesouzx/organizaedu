@@ -520,14 +520,28 @@ function switchView(pageId, pushToHistory = true) {
         else backBtn.classList.remove('hidden');
     }
 
+    // --- CORREÇÃO DO MENU MOBILE ---
     document.querySelectorAll('.mobile-nav-item').forEach(btn => {
         btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
         btn.classList.add('text-gray-400');
     });
 
     let activeNav = pageId;
-    if (['tarefas', 'calculadora', 'financeiro', 'notas', 'pomo', 'sounds'].includes(pageId)) activeNav = 'ferramentas';
-    if (pageId === 'edit-profile' || pageId === 'config') activeNav = 'home';
+
+    // Mapeamento de sub-páginas para a aba "Ferramentas"
+    if (['tarefas', 'calculadora', 'financeiro', 'notas', 'pomo', 'sounds'].includes(pageId)) {
+        activeNav = 'ferramentas';
+    }
+
+    // Mapeamento de perfil/config para a aba "Home" (ou deixe sem activeNav se preferir que nada acenda)
+    if (pageId === 'edit-profile' || pageId === 'config' || pageId === 'perfil') {
+        activeNav = 'home';
+    }
+
+    // ✅ CORREÇÃO: Força o reconhecimento da aba Onibus
+    if (pageId === 'onibus') {
+        activeNav = 'onibus';
+    }
 
     const navBtn = document.getElementById('mob-nav-' + activeNav);
     if (navBtn) {
@@ -563,7 +577,7 @@ window.uploadToImgur = async (input) => {
     if (status) status.innerText = "Enviando...";
 
     try {
-        const url = await uploadToImgur(file); // Chama a função helper
+        const url = await uploadToImgur(file); // Chama a função helper global
         document.getElementById('edit-profile-preview').src = url;
         if (status) status.innerText = "Sucesso!";
         // Guarda temporariamente para salvar depois
