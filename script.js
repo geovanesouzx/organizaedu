@@ -911,68 +911,6 @@ window.copyPixCode = function () {
     });
 }
 
-async function processPaymentWithCpf(cpf) {
-    const modal = document.getElementById('payment-modal');
-    const qrImg = document.getElementById('pix-qr-image');
-    const loader = document.getElementById('pix-loading');
-    const copyInput = document.getElementById('pix-copy-paste');
-
-    if (modal) {
-        modal.classList.remove('hidden');
-        qrImg.classList.add('opacity-50');
-        loader.classList.remove('hidden');
-        copyInput.value = "Gerando código..."; // Feedback imediato no input
-
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            modal.firstElementChild.classList.remove('scale-95');
-            modal.firstElementChild.classList.add('scale-100');
-        }, 10);
-    }
-
-    try {
-        const response = await fetch('/api/create_pix', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: userProfileData?.name || "Apoiador",
-                email: currentUser?.email,
-                cpf: cpf,
-                value: selectedDonationAmount
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.error) throw new Error(data.error);
-
-        currentPaymentId = data.id;
-
-        // Atualiza a imagem do QR Code
-        if (qrImg && data.encodedImage) {
-            qrImg.src = `data:image/png;base64,${data.encodedImage}`;
-            qrImg.onload = () => {
-                qrImg.classList.remove('opacity-50');
-                loader.classList.add('hidden'); // Esconde o loader só quando a imagem carregar
-            };
-        }
-
-        // Atualiza o campo Copia e Cola
-        if (copyInput && data.payload) {
-            copyInput.value = data.payload;
-        }
-
-        // Inicia verificação de status
-        if (paymentCheckInterval) clearInterval(paymentCheckInterval);
-        paymentCheckInterval = setInterval(checkPaymentStatus, 3000);
-
-    } catch (error) {
-        console.error("Erro Pagamento:", error);
-        window.closePaymentModal();
-        alert("Erro ao gerar PIX: " + error.message);
-    }
-}
-
 window.openCustomInputModal = function (title, placeholder, initialValue, onConfirm) {
     const modal = document.getElementById('custom-input-modal');
     if (!modal) return;
