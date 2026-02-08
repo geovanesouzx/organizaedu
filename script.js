@@ -509,12 +509,18 @@ function initChatSystem() {
             const dateStr = chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : '';
             
             historyList.innerHTML += `
-                <div onclick="loadChatSession('${doc.id}')" class="p-3 rounded-xl cursor-pointer transition hover:bg-black/5 dark:hover:bg-white/10 ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}">
-                    <p class="text-sm font-bold text-slate-800 dark:text-white truncate">${chat.title || 'Nova Conversa'}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">${dateStr}</p>
+                <div class="group flex items-center gap-1 p-1">
+                    <div onclick="loadChatSession('${doc.id}')" class="flex-1 p-3 rounded-xl cursor-pointer transition hover:bg-black/5 dark:hover:bg-white/10 ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}">
+                        <p class="text-sm font-bold text-slate-800 dark:text-white truncate">${chat.title || 'Nova Conversa'}</p>
+                        <p class="text-[10px] text-gray-400 mt-1">${dateStr}</p>
+                    </div>
+                    <button onclick="deleteChatThread('${doc.id}', event)" class="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition" title="Excluir">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
                 </div>
             `;
         });
+        if(window.lucide) lucide.createIcons();
     });
 }
 
@@ -543,6 +549,20 @@ window.loadChatSession = function(chatId) {
     currentChatHistory = [];
     listenToActiveChat();
     window.toggleHistory(false);
+}
+
+window.deleteChatThread = async function(threadId, event) {
+    if(event) event.stopPropagation();
+    if(!currentUser) return;
+    if(confirm("Excluir esta conversa?")) {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', threadId));
+        if(activeChatId === threadId) {
+            activeChatId = null;
+            const container = document.getElementById('chat-messages');
+            if(container) container.innerHTML = '';
+            addWelcomeMessage();
+        }
+    }
 }
 
 window.toggleHistory = function(show) {
@@ -1388,12 +1408,12 @@ window.renderFinance = function() {
 }
 
 const noteColors = {
-    yellow: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100',
-    green: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
-    blue: 'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100',
-    purple: 'bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-100',
-    pink: 'bg-pink-100 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800 text-pink-900 dark:text-pink-100',
-    gray: 'bg-white/40 dark:bg-white/10 border-white/20 dark:border-white/10 text-gray-800 dark:text-white'
+    yellow: 'bg-yellow-500/10 dark:bg-yellow-500/5 border-yellow-500/20 text-yellow-700 dark:text-yellow-200 glass-inner',
+    green: 'bg-green-500/10 dark:bg-green-500/5 border-green-500/20 text-green-700 dark:text-green-200 glass-inner',
+    blue: 'bg-blue-500/10 dark:bg-blue-500/5 border-blue-500/20 text-blue-700 dark:text-blue-200 glass-inner',
+    purple: 'bg-purple-500/10 dark:bg-purple-500/5 border-purple-500/20 text-purple-700 dark:text-purple-200 glass-inner',
+    pink: 'bg-pink-500/10 dark:bg-pink-500/5 border-pink-500/20 text-pink-700 dark:text-pink-200 glass-inner',
+    gray: 'bg-white/10 dark:bg-white/5 border-white/20 text-gray-700 dark:text-gray-300 glass-inner'
 };
 
 window.renderNotes = function() {
@@ -1405,8 +1425,8 @@ window.renderNotes = function() {
         if(note) {
             const currentColor = note.color || 'gray';
             container.innerHTML = `
-                <div class="flex flex-col h-[calc(100vh-6rem)] animate-fade-in">
-                    <div class="glass-panel p-4 rounded-[1.5rem] flex-1 flex flex-col relative shadow-xl overflow-hidden transition-colors duration-500">
+                <div class="flex flex-col h-full animate-fade-in p-4">
+                    <div class="glass-panel p-6 rounded-[2rem] flex-1 flex flex-col relative shadow-xl overflow-hidden transition-colors duration-500">
                         <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200/30 dark:border-white/10">
                             <button onclick="closeNote()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
                             <div class="flex gap-2">
@@ -1427,8 +1447,8 @@ window.renderNotes = function() {
                                 <button onclick="deleteNote('${note.id}')" class="p-2 rounded-full hover:bg-red-500/10 text-red-500 transition"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                             </div>
                         </div>
-                        <input type="text" id="note-title-input" value="${note.title}" placeholder="Título da Nota" class="w-full bg-transparent text-2xl font-black outline-none placeholder-gray-400 dark:text-white mb-2" oninput="updateNoteTitle('${note.id}', this.value)">
-                        <span class="text-[10px] text-gray-400 font-medium mb-4 flex items-center gap-1">
+                        <input type="text" id="note-title-input" value="${note.title}" placeholder="Título da Nota" class="w-full bg-transparent text-3xl font-black outline-none placeholder-gray-400 dark:text-white mb-2" oninput="updateNoteTitle('${note.id}', this.value)">
+                        <span class="text-[10px] text-gray-400 font-medium mb-6 flex items-center gap-1">
                             ${new Date(note.updatedAt).toLocaleString('pt-BR')} 
                             <span id="save-status" class="opacity-0 transition-opacity text-green-500">• Salvo</span>
                         </span>
@@ -1452,11 +1472,11 @@ window.renderNotes = function() {
                     <i data-lucide="plus" class="w-6 h-6 group-hover:rotate-90 transition"></i>
                 </button>
             </div>
-            <div class="columns-2 md:columns-3 gap-4 pb-20 space-y-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
     `;
     
     if(notesData.length === 0) {
-        html += `<div class="col-span-full text-center py-10 text-gray-400 break-inside-avoid-column"><p>Nenhuma nota criada.</p></div>`;
+        html += `<div class="col-span-full text-center py-10 text-gray-400"><p>Nenhuma nota criada.</p></div>`;
     } else {
         const sortedNotes = [...notesData].sort((a,b) => {
             if (a.pinned && !b.pinned) return -1;
@@ -1469,11 +1489,13 @@ window.renderNotes = function() {
             const colorStyle = noteColors[note.color || 'gray'];
             
             html += `
-                <div onclick="openNote('${note.id}')" class="break-inside-avoid-column mb-4 rounded-2xl p-5 cursor-pointer hover:scale-[1.02] transition shadow-sm border ${colorStyle} relative group">
-                    ${note.pinned ? '<div class="absolute top-3 right-3 text-amber-500"><i data-lucide="pin" class="w-3 h-3 fill-current"></i></div>' : ''}
-                    <h3 class="font-bold text-lg mb-2 truncate pr-4 leading-tight">${note.title || 'Sem Título'}</h3>
-                    <p class="text-xs opacity-80 line-clamp-4 leading-relaxed mb-3 font-medium">${note.content || 'Nova nota...'}</p>
-                    <span class="text-[10px] opacity-60 font-bold uppercase tracking-wider">${date}</span>
+                <div onclick="openNote('${note.id}')" class="h-full rounded-[1.5rem] p-5 cursor-pointer hover:scale-[1.02] transition shadow-sm border backdrop-blur-md ${colorStyle} relative group flex flex-col justify-between min-h-[140px]">
+                    <div>
+                        ${note.pinned ? '<div class="absolute top-4 right-4 text-amber-500"><i data-lucide="pin" class="w-4 h-4 fill-current"></i></div>' : ''}
+                        <h3 class="font-bold text-lg mb-2 truncate pr-6 leading-tight">${note.title || 'Sem Título'}</h3>
+                        <p class="text-xs opacity-70 line-clamp-3 leading-relaxed mb-3 font-medium">${note.content || 'Nova nota...'}</p>
+                    </div>
+                    <span class="text-[10px] opacity-50 font-bold uppercase tracking-wider block mt-auto">${date}</span>
                 </div>
             `;
         });
