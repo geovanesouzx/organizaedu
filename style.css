@@ -326,8 +326,8 @@ aside.fixed-sidebar {
 
 /* --- 5. CORREÇÃO DA BARRA DE DIGITAÇÃO (IA) --- */
 #chat-input-container {
-    /* Mudei para 4rem (aprox 64px) para subir MUITO mais */
-    padding-bottom: max(4rem, calc(var(--safe-bottom) + 2rem)) !important;
+    /* Ajustado para 4.5rem (aprox 72px) para subir BEM mais */
+    padding-bottom: max(4.5rem, calc(var(--safe-bottom) + 1.5rem)) !important;
 
     /* Ajustes visuais */
     padding-top: 1.5rem !important;
