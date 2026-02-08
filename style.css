@@ -326,23 +326,21 @@ aside.fixed-sidebar {
 
 /* --- 5. CORREÇÃO DA BARRA DE DIGITAÇÃO (IA) --- */
 #chat-input-container {
-    /* Força a barra a subir, fugindo da área de gestos */
-    padding-bottom: max(2rem, calc(var(--safe-bottom) + 1.5rem)) !important;
+    /* Mudei para 4rem (aprox 64px) para subir MUITO mais */
+    padding-bottom: max(4rem, calc(var(--safe-bottom) + 2rem)) !important;
 
-    /* Ajustes visuais para o gradiente ficar bonito */
+    /* Ajustes visuais */
     padding-top: 1.5rem !important;
-
-    /* Garante que fique acima de tudo */
     z-index: 60;
 
-    /* Reforça o fundo gradiente para o texto de trás não atrapalhar */
+    /* Gradiente */
     background: linear-gradient(to top,
-            rgba(255, 255, 255, 0.95) 30%,
+            rgba(255, 255, 255, 0.95) 40%,
             rgba(255, 255, 255, 0) 100%);
 }
 
 .dark #chat-input-container {
     background: linear-gradient(to top,
-            rgba(15, 23, 42, 0.95) 30%,
+            rgba(15, 23, 42, 0.95) 40%,
             rgba(15, 23, 42, 0) 100%);
 }
