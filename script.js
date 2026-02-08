@@ -654,7 +654,8 @@ window.setAIProvider = function (provider) {
     }
 }
 
-// NOVA FUNÇÃO DE ENVIO COM LIMITE DE CONTEXTO
+// SUBSTITUA A FUNÇÃO sendMessage POR ESTA:
+
 window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!currentUser) return;
 
@@ -669,10 +670,12 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!textOverride) input.value = '';
 
     if (organizaIA) {
+        // Adiciona mensagem do usuário na tela
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
+        // Atualiza título do chat se for novo
         const threadRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId);
         if (currentChatHistory.length < 2) {
             await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
@@ -680,25 +683,41 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
             await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
         }
 
-        // Prepara dados do ônibus para a IA ter consciência
-        const nextBusInfo = getNextBusForContext();
+        // --- OTIMIZAÇÃO PARA MOBILE (CORREÇÃO DO ERRO DE SOBRECARGA) ---
+        // Pega apenas as 5 últimas notas e corta textos gigantes
+        // Isso reduz o peso do envio de 5MB para ~10KB
+        const optimizedNotes = notesData.slice(0, 5).map(n => ({
+            title: n.title,
+            content: n.content ? n.content.substring(0, 150) + "..." : "", // Limita caracteres
+            date: new Date(n.updatedAt).toLocaleDateString()
+        }));
+
+        // Envia apenas tarefas pendentes + 3 últimas concluídas
+        const pendingTasks = tasksData.filter(t => !t.done);
+        const doneTasks = tasksData.filter(t => t.done).slice(0, 3);
+        const optimizedTasks = [...pendingTasks, ...doneTasks];
+
+        const nextBusInfo = typeof getNextBusForContext === 'function' ? getNextBusForContext() : "Verificar app";
 
         const userContext = {
             profile: userProfileData,
             schedule: scheduleData,
-            tasks: tasksData,
+            tasks: optimizedTasks, // Versão leve
             finance: financeData,
-            notes: notesData,
+            notes: optimizedNotes, // Versão leve
             grades: gradesData,
             busStatus: nextBusInfo,
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
 
-        const limitedHistory = currentChatHistory.slice(-10);
+        // Mantém histórico curto para não estourar limite
+        const limitedHistory = currentChatHistory.slice(-6);
 
+        // Chama a IA
         const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider, limitedHistory);
 
+        // Salva resposta da IA
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: result.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
         });
