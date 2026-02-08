@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { OrganizaIA } from "./organizaedu.js";
 
@@ -322,15 +322,40 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// --- FUNÇÃO QUE O ANDROID CHAMA (A PONTE) ---
+window.handleNativeLogin = (idToken) => {
+    const credential = GoogleAuthProvider.credential(idToken);
+    signInWithCredential(auth, credential)
+        .then((result) => {
+            console.log("Login Nativo via Android realizado com sucesso!");
+            // O onAuthStateChanged lá em cima vai detectar o login e redirecionar
+        })
+        .catch((error) => {
+            console.error("Erro no login nativo:", error);
+            alert("Erro ao logar pelo Android: " + error.message);
+        });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnLogin = document.getElementById('btn-login-google');
+
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
+            // 1. Verifica se está rodando dentro do App Android (Ponte existe?)
+            if (window.AndroidInterface) {
+                console.log("Detectado App Android. Chamando login nativo...");
+                window.AndroidInterface.triggerGoogleLogin();
+            }
+            // 2. Se não, usa o login normal de site (PC/iOS/Navegador)
+            else {
+                console.log("Ambiente Web detectado. Usando Popup...");
+                const provider = new GoogleAuthProvider();
+                signInWithPopup(auth, provider).catch((error) => alert("Erro: " + error.message));
+            }
         });
     }
 
+    // Resto do código de navegação e ícones...
     window.addEventListener('popstate', (event) => {
         const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
         switchView(page, false);
