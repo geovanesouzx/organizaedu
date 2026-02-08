@@ -50,8 +50,11 @@ export class OrganizaIA {
 
             const data = await response.json();
 
+            // VERIFICA SE A IA PEDIU UMA AÇÃO
             if (data.action) {
                 console.log("IA solicitou ação:", data.action);
+                
+                // Executa a ação e aguarda finalizar
                 await this.executeAction(data.action);
 
                 if (data.response) {
@@ -74,48 +77,25 @@ export class OrganizaIA {
         }
     }
 
+    // --- CORREÇÃO APLICADA AQUI ---
     async executeAction(action) {
         const { type, data } = action;
 
-        // Mapeia os comandos da IA para as funções do site
-        // Usa blocos try-catch individuais para garantir que uma falha não pare tudo
-        try {
-            switch (type) {
-                case 'create_class':
-                    if (this.callbacks.addClass) this.callbacks.addClass(data);
-                    break;
-                case 'delete_class':
-                    if (this.callbacks.deleteClass) this.callbacks.deleteClass(data.id);
-                    break;
-                case 'create_task':
-                    if (this.callbacks.addTask) this.callbacks.addTask(data);
-                    break;
-                case 'delete_task':
-                    if (this.callbacks.deleteTask) this.callbacks.deleteTask(data.id);
-                    break;
-                case 'create_transaction':
-                    if (this.callbacks.addTransaction) this.callbacks.addTransaction(data);
-                    break;
-                case 'create_note':
-                    if (this.callbacks.createNote) this.callbacks.createNote(data);
-                    break;
-                case 'control_timer':
-                    if (this.callbacks.controlTimer) this.callbacks.controlTimer(data);
-                    break;
-                case 'add_grade':
-                    if (this.callbacks.addGrade) this.callbacks.addGrade(data);
-                    break;
-                case 'change_theme':
-                    if (this.callbacks.changeTheme) this.callbacks.changeTheme(data);
-                    break;
-                case 'set_style':
-                    if (this.callbacks.setWidgetStyle) this.callbacks.setWidgetStyle(data);
-                    break;
-                default:
-                    console.warn("Ação desconhecida da IA:", type);
+        console.log(`🤖 IA solicitou execução da ação: [${type}]`, data);
+
+        // Verifica se a função existe nas callbacks passadas pelo script.js
+        // Isso conecta 'create_class' do JSON diretamente com 'create_class' do script.js
+        if (this.callbacks && typeof this.callbacks[type] === 'function') {
+            try {
+                // Executa a função passando os dados
+                await this.callbacks[type](data);
+                console.log(`✅ Ação [${type}] executada com sucesso.`);
+            } catch (error) {
+                console.error(`❌ Erro ao executar a ação [${type}]:`, error);
+                // Opcional: Retornar erro para o chat se necessário
             }
-        } catch (err) {
-            console.error("Erro ao executar ação da IA:", err);
+        } else {
+            console.warn(`⚠️ Ação [${type}] não encontrada. Verifique se o nome no script.js (AI_Actions) é idêntico ao que a IA enviou.`);
         }
     }
 }

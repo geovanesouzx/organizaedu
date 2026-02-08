@@ -1,110 +1,156 @@
 export default async function handler(req, res) {
-    // Configuração de CORS
+    // Configuração de CORS para permitir acesso do seu frontend
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-    if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
     const { provider, message, history, context } = req.body;
+    
+    // Variáveis de ambiente (salvas na Vercel)
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const GROQ_KEY = process.env.GROQ_API_KEY;
 
     try {
         let result = {};
 
-        // --- MANUAL DAS 20 FERRAMENTAS ---
+        // --- SISTEMA DE TOOLS (AÇÕES) ---
         const toolsInstruction = `
-            FERRAMENTAS (Responda APENAS o JSON da ação se aplicável):
-            { "action": { "type": "NOME", "data": { ... } }, "response": "Texto opcional" }
+            FERRAMENTAS DISPONÍVEIS:
+            Para executar uma ação, responda APENAS um JSON no seguinte formato (sem markdown):
+            {
+              "action": {
+                "type": "NOME_DA_ACAO",
+                "data": { ...dados }
+              },
+              "response": "Texto de confirmação para o usuário"
+            }
 
-            1. create_class: { name, day (seg/ter...), start (HH:MM), end (HH:MM), room }
-            2. delete_class: { name_or_id }
-            3. create_task: { text, category (estudo/prova/pessoal) }
-            4. delete_task: { text_or_id }
-            5. create_transaction: { desc, val }
-            6. delete_transaction: { desc_or_id }
-            7. create_note: { title, content }
-            8. delete_note: { title_or_id }
-            9. pin_note: { title_or_id } (Fixar/Desfixar nota)
-            10. control_timer: { action: 'start'/'stop'/'reset', mode: 'pomodoro'/'short'/'long' }
-            11. add_grade: { subject, value } (Nota escolar)
-            12. change_theme: { mode: 'dark'/'light'/'toggle' }
-            13. set_style: { style: 'modern'/'classic' } (Widget Home)
-            14. navigate_to: { page: 'home'/'aulas'/'tarefas'/'financeiro'/'notas'/'calculadora'/'pomo' }
-            15. set_budget: { value } (Definir meta financeira)
-            16. clear_completed_tasks: {} (Limpar tarefas feitas)
-            17. filter_tasks: { category: 'all'/'estudo'/'pessoal' }
-            18. toggle_privacy: {} (Borrar/Desborrar valores financeiros)
-            19. reset_finance: {} (Limpar todos os gastos)
-            20. open_modal: { modal: 'donation'/'profile' }
+            AÇÕES SUPORTADAS:
+            1. create_class (Adicionar Aula)
+               - data: { name (obrigatório), day (seg,ter,qua,qui,sex,sab), start (HH:MM), end (HH:MM), room, prof }
+            2. delete_class (Excluir Aula)
+               - data: { id (se souber) ou nome aproximado }
+            3. create_task (Criar Tarefa)
+               - data: { text (obrigatório), category (estudo, prova, trabalho, pessoal), date (YYYY-MM-DDTHH:MM) }
+            4. delete_task (Excluir Tarefa)
+               - data: { id (se souber) ou texto da tarefa }
+            5. create_transaction (Adicionar Gasto)
+               - data: { desc, val }
+            6. create_note (Criar Nota/Resumo)
+               - data: { title, content }
+            7. control_timer (Modo Foco)
+               - data: { action: 'start'|'stop', mode: 'pomodoro'|'short'|'long' }
+            8. add_grade (Adicionar Nota Escolar)
+               - data: { subject, value, name }
+            9. change_theme (Mudar Tema)
+               - data: { mode: 'dark'|'light' }
+            10. set_style (Estilo do Widget)
+               - data: { style: 'modern'|'classic' }
 
-            IMPORTANTE:
-            - Identifique o contexto do usuário para IDs (ex: "apague a ultima nota").
-            - Se for conversa normal, retorne JSON com campo "response".
+            REGRAS DE RESPOSTA:
+            - Se o usuário pedir para criar algo, USE O JSON.
+            - Se for apenas conversa, responda com JSON contendo apenas o campo "response".
+            - NUNCA repita o prompt do usuário.
+            - Identidade: OrganizaEdu.
         `;
 
-        const systemProfile = `Você é a OrganizaEdu. Contexto: ${JSON.stringify(context).substring(0, 2000)}`;
+        const systemProfile = `
+            Você é a OrganizaEdu, assistente pessoal integrada.
+            
+            DADOS ATUAIS DO USUÁRIO:
+            - Perfil: ${context.profile?.name || 'Aluno'}
+            - Próximo Ônibus: ${context.busStatus || 'Desconhecido'}
+            - Orçamento: R$ ${context.currentBudget}
+            - Contexto: ${JSON.stringify(context.schedule ? 'Grade carregada' : 'Sem grade')}
+        `;
 
-        // Função para limpar o JSON (A CORREÇÃO MÁGICA)
-        const cleanJSON = (text) => {
-            if (!text) return null;
-            let cleaned = text.trim();
-            // Remove blocos de código markdown ```json ... ```
-            cleaned = cleaned.replace(/^```json\s*/, '').replace(/^```/, '').replace(/```$/, '');
-            return cleaned;
-        };
-
-        let rawResponse = "";
-
+        // --- GEMINI (GOOGLE) ---
         if (provider === 'gemini') {
-            if (!GEMINI_KEY) throw new Error("Falta GEMINI_API_KEY");
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+            if (!GEMINI_KEY) throw new Error("Chave API Gemini não configurada.");
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_KEY}`;
+            
+            const fullSystemPrompt = systemProfile + "\n\n" + toolsInstruction;
+            
+            let contents = [];
+            // Mapeamento correto para Gemini: 'user' ou 'model'
+            if (history && Array.isArray(history)) {
+                history.forEach(msg => {
+                    const role = (msg.role === 'user') ? 'user' : 'model';
+                    contents.push({ role: role, parts: [{ text: msg.text }] });
+                });
+            }
+            contents.push({ role: "user", parts: [{ text: message }] });
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ role: "user", parts: [{ text: systemProfile + "\n" + toolsInstruction + "\nUser: " + message }] }],
-                    generationConfig: { temperature: 0.4, responseMimeType: "application/json" }
+                    contents: contents,
+                    systemInstruction: { parts: [{ text: fullSystemPrompt }] },
+                    generationConfig: { 
+                        temperature: 0.4, 
+                        responseMimeType: "application/json" 
+                    }
                 })
             });
-            const data = await response.json();
-            rawResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
+            const data = await response.json();
+            if (data.error) throw new Error(`Erro Gemini: ${data.error.message}`);
+            
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawText) throw new Error("Resposta vazia do Gemini");
+
+            try {
+                result = JSON.parse(rawText);
+            } catch (e) {
+                result = { response: rawText };
+            }
+
+        // --- GROQ (LLAMA) ---
         } else {
-            if (!GROQ_KEY) throw new Error("Falta GROQ_API_KEY");
-            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+             if (!GROQ_KEY) throw new Error("Chave API Groq não configurada.");
+             const url = "https://api.groq.com/openai/v1/chat/completions";
+             
+             // CORREÇÃO DE ROLE: Garante que apenas 'user' ou 'assistant' sejam passados
+             const validHistory = history.map(m => {
+                 let role = 'user';
+                 if (m.role && (m.role === 'assistant' || m.role === 'ai' || m.role === 'model')) {
+                     role = 'assistant';
+                 }
+                 return { role: role, content: m.text };
+             });
+
+             const messages = [
+                 { role: "system", content: systemProfile + "\n\n" + toolsInstruction + "\nIMPORTANTE: Responda SEMPRE em JSON válido." },
+                 ...validHistory,
+                 { role: "user", content: message }
+             ];
+
+             const response = await fetch(url, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "llama-3.3-70b-versatile",
-                    messages: [
-                        { role: "system", content: systemProfile + "\n" + toolsInstruction + "\nRESPONDA APENAS JSON PURO." },
-                        ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.text })),
-                        { role: "user", content: message }
-                    ],
-                    response_format: { type: "json_object" }
-                })
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: messages, temperature: 0.4, response_format: { type: "json_object" } })
             });
+
             const data = await response.json();
-            rawResponse = data.choices?.[0]?.message?.content;
-        }
-
-        if (!rawResponse) throw new Error("Resposta vazia da IA");
-
-        try {
-            result = JSON.parse(cleanJSON(rawResponse));
-        } catch (e) {
-            console.error("Falha no JSON:", rawResponse);
-            // Fallback: tenta recuperar se for texto puro
-            result = { response: rawResponse };
+            if (data.error) throw new Error(data.error.message);
+            result = JSON.parse(data.choices[0].message.content);
         }
 
         return res.status(200).json(result);
 
     } catch (error) {
-        console.error("API Error:", error);
-        return res.status(500).json({ response: "Erro interno na IA. Tente novamente." });
+        console.error("API Chat Error:", error);
+        return res.status(500).json({ response: "Erro ao processar sua solicitação. Tente novamente.", error: error.message });
     }
 }
