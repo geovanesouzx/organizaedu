@@ -15,43 +15,52 @@ export class OrganizaIA {
 
     async processMessage(userText, contextData, provider, history) {
         try {
+            // Tenta enviar com um timeout de segurança no client-side (30s)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
                 body: JSON.stringify({
                     provider: provider,
                     message: userText,
                     context: contextData,
-                    history: history 
+                    history: history
                 })
             });
 
-            // Se der erro 429 ou 500, tratamos como texto
+            clearTimeout(timeoutId);
+
+            // SE DER ERRO NA RESPOSTA (NÃO FOI 200 OK)
             if (!response.ok) {
                 const errText = await response.text();
+                console.error("Erro Bruto:", errText); // Mostra no console
+
+                // Tenta ler se é um JSON de erro da nossa API
                 try {
                     const errJson = JSON.parse(errText);
-                    return { text: `Erro da IA: ${errJson.error || 'Desconhecido'}` };
+                    return { text: `⚠️ Erro da IA: ${errJson.error || 'Desconhecido'}` };
                 } catch (e) {
-                    return { text: "A IA está sobrecarregada ou indisponível no momento. Tente novamente em alguns segundos." };
+                    // Se não for JSON (ex: Erro HTML 504 do Vercel/Firebase por demora)
+                    return { text: `⚠️ Erro de Servidor (${response.status}): A conexão caiu ou demorou muito. Tente uma mensagem mais curta.` };
                 }
             }
 
             const data = await response.json();
-            
-            // Verifica se a IA mandou executar uma ação (JSON estruturado)
+
+            // Verifica se a IA mandou executar uma ação
             if (data.action) {
                 console.log("IA solicitou ação:", data.action);
                 await this.executeAction(data.action);
-                
-                // Se a IA também mandou uma resposta de texto junto com a ação
+
                 if (data.response) {
                     return { text: this.formatResponse(data.response) };
                 }
                 return { text: "Feito! ✅" };
             }
 
-            // Se for resposta normal de texto
             return {
                 text: this.formatResponse(data.response || data.text),
                 raw: data
@@ -59,7 +68,10 @@ export class OrganizaIA {
 
         } catch (error) {
             console.error("Erro na OrganizaIA:", error);
-            return { text: "Tive um problema de conexão. Verifique sua internet." };
+            if (error.name === 'AbortError') {
+                return { text: "⏱️ A IA demorou muito para responder (Timeout). Sua internet pode estar lenta no celular." };
+            }
+            return { text: `🚫 Erro de Conexão: ${error.message}. Verifique sua internet.` };
         }
     }
 
