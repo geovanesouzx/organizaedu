@@ -270,25 +270,64 @@ async function uploadToImgur(file) {
 }
 
 // --- AUTH & BOOT ---
-// (Mantenha o seu onAuthStateChanged como está, ele está perfeito)
 onAuthStateChanged(auth, async (user) => {
-    // ... seu código original aqui ...
+    const loadingScreen = document.getElementById('loading-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const setupScreen = document.getElementById('setup-screen');
+    const appContent = document.getElementById('app-content');
+
+    if (user) {
+        currentUser = user;
+
+        const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'profile');
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists() && profileSnap.data().username) {
+            initDataSync();
+            initChatSystem();
+
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    if (loginScreen) loginScreen.classList.add('hidden');
+                    if (setupScreen) setupScreen.classList.add('hidden');
+                    if (appContent) {
+                        appContent.classList.remove('hidden');
+                        setTimeout(() => appContent.style.opacity = '1', 50);
+                    }
+                }, 500);
+            }
+        } else {
+            if (document.getElementById('setup-name')) document.getElementById('setup-name').value = user.displayName || "";
+            if (user.photoURL && document.getElementById('setup-profile-preview')) document.getElementById('setup-profile-preview').src = user.photoURL;
+
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                loginScreen.classList.add('hidden');
+                setupScreen.classList.remove('hidden');
+            }, 500);
+        }
+
+    } else {
+        currentUser = null;
+        if (loadingScreen) loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            if (appContent) appContent.classList.add('hidden');
+            if (setupScreen) setupScreen.classList.add('hidden');
+            if (loginScreen) loginScreen.classList.remove('hidden');
+        }, 500);
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnLogin = document.getElementById('btn-login-google');
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
-            // 1. VERIFICA SE ESTÁ NO APP ANDROID
-            if (window.AndroidLogin) {
-                // Chama a janelinha nativa que configuramos no Kotlin
-                AndroidLogin.iniciarLoginGoogle();
-            } else {
-                // 2. SE ESTIVER NO NAVEGADOR (PC/CHROME), USA O PADRÃO
-                const provider = new GoogleAuthProvider();
-                signInWithPopup(auth, provider)
-                    .catch((error) => alert("Erro ao fazer login: " + error.message));
-            }
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
         });
     }
 
@@ -305,20 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (window.lucide) lucide.createIcons();
 });
-
-// --- FUNÇÃO PARA RECEBER O TOKEN DO ANDROID ---
-// Esta função é chamada pelo Kotlin após você escolher a conta na janelinha
-window.finalizarLoginNativo = function (token) {
-    // Importante: Verifique se o GoogleAuthProvider e signInWithCredential estão disponíveis no seu escopo
-    const credential = GoogleAuthProvider.credential(token);
-    signInWithCredential(auth, credential)
-        .then(() => {
-            console.log("Logado com sucesso via App!");
-        })
-        .catch((error) => {
-            alert("Erro na validação do App: " + error.message);
-        });
-}
 
 window.logout = function () {
     signOut(auth).then(() => window.location.reload());
