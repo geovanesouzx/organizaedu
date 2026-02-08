@@ -78,13 +78,14 @@ body {
 }
 
 /* --- 2. HEADER CORRIGIDO (Área Segura) --- */
-/* Isso faz o texto descer automaticamente se tiver notch/câmera */
 .sticky-header {
     position: sticky; 
     top: 0; 
     z-index: 40; 
-    /* Padding dinâmico: Altura segura do topo + espaço extra */
-    padding-top: calc(var(--safe-top) + 1.5rem) !important;
+    
+    /* CORREÇÃO: "max()" força um espaço mínimo de 4rem no topo, resolvendo a sobreposição */
+    padding-top: max(4rem, calc(var(--safe-top) + 1.5rem)) !important;
+    
     padding-bottom: 1rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -110,15 +111,16 @@ aside.fixed-sidebar {
 }
 
 /* --- 3. DOCK MOBILE CORRIGIDA (Área Segura) --- */
-/* Isso faz o menu subir se tiver barra de gestos */
 .glass-nav {
     position: fixed; 
-    bottom: 1.5rem; 
+    
+    /* CORREÇÃO: "max()" sobe o menu para longe da barra de gestos */
+    bottom: max(2.5rem, calc(var(--safe-bottom) + 1.5rem)) !important;
+    
     left: 1rem; 
     right: 1rem; 
     z-index: 50;
     
-    /* Altura automática */
     height: auto;
     min-height: 4rem;
 
@@ -130,8 +132,8 @@ aside.fixed-sidebar {
     border-radius: 2rem;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Padding dinâmico: Barra de gestos + respiro */
-    padding-bottom: calc(var(--safe-bottom) + 0.5rem) !important;
+    /* Preenchimento extra */
+    padding-bottom: 0.5rem !important;
     padding-top: 0.5rem;
     
     display: flex;
@@ -184,7 +186,6 @@ aside.fixed-sidebar {
     backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.5);
     
-    /* Respeita as margens seguras */
     margin-top: var(--safe-top);
     margin-bottom: var(--safe-bottom);
     max-height: calc(100vh - var(--safe-top) - var(--safe-bottom) - 4rem);
