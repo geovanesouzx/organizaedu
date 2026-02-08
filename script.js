@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { OrganizaIA } from "./organizaedu.js"; 
+import { OrganizaIA } from "./organizaedu.js";
 
 // FIREBASE CONFIG
 const firebaseConfig = {
@@ -18,15 +18,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUser = null;
-const appId = "organiza_edu_v1"; 
+const appId = "organiza_edu_v1";
 
 // Variáveis Globais
 let userProfileData = {};
 let scheduleData = [];
 let tasksData = [];
 let financeData = [];
-let gradesData = []; 
-let notesData = []; 
+let gradesData = [];
+let notesData = [];
 let monthlyBudget = 0;
 let widgetStyle = 'modern';
 let selectedColor = 'indigo';
@@ -72,7 +72,7 @@ const AI_Actions = {
             const found = scheduleData.find(c => c.name.toLowerCase().includes(id.toLowerCase()));
             if (found) targetId = found.id;
         }
-        
+
         if (targetId) {
             scheduleData = scheduleData.filter(x => x.id !== targetId);
             saveData();
@@ -85,7 +85,7 @@ const AI_Actions = {
             id: Date.now(),
             text: data.text || "Nova Tarefa",
             category: data.category || "estudo",
-            date: data.date || "", 
+            date: data.date || "",
             done: false
         });
         saveData();
@@ -121,7 +121,7 @@ const AI_Actions = {
         if (window.renderNotes) window.renderNotes();
         // Feedback visual sutil se não estiver na tela de notas
         const btn = document.getElementById('mob-nav-ferramentas');
-        if(btn) {
+        if (btn) {
             btn.classList.add('animate-bounce');
             setTimeout(() => btn.classList.remove('animate-bounce'), 1000);
         }
@@ -130,11 +130,11 @@ const AI_Actions = {
         if (data.mode && window.setTimerMode) window.setTimerMode(data.mode);
         const btn = document.getElementById('btn-timer-start');
         const isCurrentlyRunning = btn && btn.innerHTML.includes('pause');
-        
+
         if (data.action === 'start' && !isCurrentlyRunning) {
-            if(window.toggleTimer) window.toggleTimer();
+            if (window.toggleTimer) window.toggleTimer();
         } else if (data.action === 'stop' && isCurrentlyRunning) {
-            if(window.toggleTimer) window.toggleTimer();
+            if (window.toggleTimer) window.toggleTimer();
         }
     },
     addGrade: (data) => {
@@ -154,7 +154,7 @@ const AI_Actions = {
         else if (data.mode === 'light' && isDark) document.documentElement.classList.remove('dark');
     },
     setWidgetStyle: (data) => {
-        if(window.setWidgetStyle) window.setWidgetStyle(data.style);
+        if (window.setWidgetStyle) window.setWidgetStyle(data.style);
     }
 };
 
@@ -171,7 +171,7 @@ const colorPalettes = {
 
 // --- UTILS IMGUR (CORRIGIDO COM O CLIENT ID FORNECIDO) ---
 async function uploadToImgur(file) {
-    const clientId = "513bb727cecf9ac"; 
+    const clientId = "513bb727cecf9ac";
     const formData = new FormData();
     formData.append("image", file);
 
@@ -201,29 +201,29 @@ onAuthStateChanged(auth, async (user) => {
 
     if (user) {
         currentUser = user;
-        
+
         const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'profile');
         const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists() && profileSnap.data().username) {
             initDataSync();
-            initChatSystem(); 
-            
-            if(loadingScreen) {
+            initChatSystem();
+
+            if (loadingScreen) {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
                     loadingScreen.classList.add('hidden');
-                    if(loginScreen) loginScreen.classList.add('hidden');
-                    if(setupScreen) setupScreen.classList.add('hidden');
-                    if(appContent) {
+                    if (loginScreen) loginScreen.classList.add('hidden');
+                    if (setupScreen) setupScreen.classList.add('hidden');
+                    if (appContent) {
                         appContent.classList.remove('hidden');
                         setTimeout(() => appContent.style.opacity = '1', 50);
                     }
                 }, 500);
             }
         } else {
-            if(document.getElementById('setup-name')) document.getElementById('setup-name').value = user.displayName || "";
-            if(user.photoURL && document.getElementById('setup-profile-preview')) document.getElementById('setup-profile-preview').src = user.photoURL;
+            if (document.getElementById('setup-name')) document.getElementById('setup-name').value = user.displayName || "";
+            if (user.photoURL && document.getElementById('setup-profile-preview')) document.getElementById('setup-profile-preview').src = user.photoURL;
 
             loadingScreen.style.opacity = '0';
             setTimeout(() => {
@@ -235,40 +235,40 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         currentUser = null;
-        if(loadingScreen) loadingScreen.style.opacity = '0';
+        if (loadingScreen) loadingScreen.style.opacity = '0';
         setTimeout(() => {
-            if(loadingScreen) loadingScreen.classList.add('hidden');
-            if(appContent) appContent.classList.add('hidden');
-            if(setupScreen) setupScreen.classList.add('hidden');
-            if(loginScreen) loginScreen.classList.remove('hidden');
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            if (appContent) appContent.classList.add('hidden');
+            if (setupScreen) setupScreen.classList.add('hidden');
+            if (loginScreen) loginScreen.classList.remove('hidden');
         }, 500);
     }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnLogin = document.getElementById('btn-login-google');
-    if(btnLogin) {
+    if (btnLogin) {
         btnLogin.addEventListener('click', () => {
-             const provider = new GoogleAuthProvider();
-             signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
         });
     }
-    
+
     window.addEventListener('popstate', (event) => {
         const page = event.state ? event.state.page : (window.location.hash.replace('#', '') || 'home');
         switchView(page, false);
     });
-    
+
     const checkModern = document.getElementById('check-modern');
-    if(checkModern) {
+    if (checkModern) {
         checkModern.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
         checkModern.classList.add('bg-indigo-600', 'border-transparent');
     }
-    
-    if(window.lucide) lucide.createIcons();
+
+    if (window.lucide) lucide.createIcons();
 });
 
-window.logout = function() {
+window.logout = function () {
     signOut(auth).then(() => window.location.reload());
 }
 
@@ -296,9 +296,9 @@ window.finishSetup = async () => {
     const semester = document.getElementById('setup-semester').value;
     let avatarUrl = window.tempSetupAvatarUrl || document.getElementById('setup-profile-preview').src;
 
-    if(!name || !username) return alert("Preencha os campos obrigatórios.");
+    if (!name || !username) return alert("Preencha os campos obrigatórios.");
 
-    if(currentUser) {
+    if (currentUser) {
         await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), {
             name, username, course, semester, avatarUrl, joinedAt: Date.now()
         }, { merge: true });
@@ -309,37 +309,37 @@ window.finishSetup = async () => {
 // --- DATA SYNC ---
 function initDataSync() {
     if (!currentUser) return;
-    
+
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), (doc) => {
         if (doc.exists()) {
             const data = doc.data();
             userProfileData = data;
-            
+
             const elName = document.getElementById('profile-name');
-            if(elName) elName.innerText = data.name || "Usuário";
+            if (elName) elName.innerText = data.name || "Usuário";
             const elUser = document.getElementById('profile-username');
-            if(elUser) elUser.innerText = '@' + (data.username || "...");
+            if (elUser) elUser.innerText = '@' + (data.username || "...");
             const elCourse = document.getElementById('profile-course');
-            if(elCourse) elCourse.innerText = `${data.course || ""} • ${data.semester || ""}`;
-            
+            if (elCourse) elCourse.innerText = `${data.course || ""} • ${data.semester || ""}`;
+
             const avatarUrl = data.avatarUrl || currentUser.photoURL;
-            if(document.getElementById('profile-img')) document.getElementById('profile-img').src = avatarUrl;
-            if(document.getElementById('header-img')) document.getElementById('header-img').src = avatarUrl;
-            if(document.getElementById('edit-profile-preview')) document.getElementById('edit-profile-preview').src = avatarUrl;
+            if (document.getElementById('profile-img')) document.getElementById('profile-img').src = avatarUrl;
+            if (document.getElementById('header-img')) document.getElementById('header-img').src = avatarUrl;
+            if (document.getElementById('edit-profile-preview')) document.getElementById('edit-profile-preview').src = avatarUrl;
         }
     });
 
     onSnapshot(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'settings'), (doc) => {
         const data = doc.exists() ? doc.data() : {};
-        
+
         scheduleData = data.schedule || [];
         tasksData = data.tasks || [];
         financeData = data.finance || [];
         monthlyBudget = data.monthlyBudget || 0;
         notesData = data.notes || [];
         gradesData = data.grades || [];
-        
-        if(data.widgetStyle) {
+
+        if (data.widgetStyle) {
             widgetStyle = data.widgetStyle;
             updateWidgetStyleUI();
         }
@@ -358,8 +358,8 @@ function initDataSync() {
 function updateWidgetStyleUI() {
     document.querySelectorAll('.widget-check').forEach(el => { el.innerHTML = ''; el.classList.remove('bg-indigo-600', 'border-transparent'); });
     const check = document.getElementById('check-' + widgetStyle);
-    if(check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
-    if(window.lucide) lucide.createIcons();
+    if (check) { check.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>'; check.classList.add('bg-indigo-600', 'border-transparent'); }
+    if (window.lucide) lucide.createIcons();
 }
 
 // --- NAVEGAÇÃO ---
@@ -368,9 +368,9 @@ function switchView(pageId, pushToHistory = true) {
     const target = document.getElementById('view-' + pageId);
     if (target) {
         target.classList.remove('hidden');
-        window.scrollTo(0, 0); 
+        window.scrollTo(0, 0);
     }
-    
+
     const mobileNav = document.querySelector('.glass-nav');
     if (mobileNav) {
         if (pageId === 'ia') {
@@ -379,7 +379,7 @@ function switchView(pageId, pushToHistory = true) {
             mobileNav.classList.remove('hidden-nav');
         }
     }
-    
+
     // PREENCHE DADOS AO ABRIR EDIÇÃO
     if (pageId === 'edit-profile') {
         populateEditProfile();
@@ -391,18 +391,18 @@ function switchView(pageId, pushToHistory = true) {
     if (pageId === 'financeiro') window.renderFinance();
     if (pageId === 'aulas') window.renderSchedule();
     if (pageId === 'onibus') window.updateBusWidget();
-    
+
     if (pushToHistory) {
         history.pushState({ page: pageId }, null, `#${pageId}`);
     }
 
     const titles = { 'home': 'Visão Geral', 'aulas': 'Grade', 'ia': 'Organiza IA', 'ferramentas': 'Ferramentas', 'onibus': 'Circular', 'perfil': 'Perfil', 'financeiro': 'Financeiro', 'tarefas': 'Tarefas', 'notas': 'Anotações', 'calculadora': 'Calculadora', 'pomo': 'Foco', 'sounds': 'Sons', 'edit-profile': 'Editar Perfil', 'config': 'Ajustes' };
     const elTitle = document.getElementById('header-title');
-    if(elTitle) elTitle.innerText = titles[pageId] || 'OrganizaEdu';
+    if (elTitle) elTitle.innerText = titles[pageId] || 'OrganizaEdu';
 
     const backBtn = document.getElementById('back-btn');
-    if(backBtn) {
-        if(pageId === 'home') backBtn.classList.add('hidden');
+    if (backBtn) {
+        if (pageId === 'home') backBtn.classList.add('hidden');
         else backBtn.classList.remove('hidden');
     }
 
@@ -410,18 +410,18 @@ function switchView(pageId, pushToHistory = true) {
         btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
         btn.classList.add('text-gray-400');
     });
-    
+
     let activeNav = pageId;
-    if(['tarefas','calculadora','financeiro','notas','pomo','sounds'].includes(pageId)) activeNav = 'ferramentas';
-    if(pageId === 'edit-profile' || pageId === 'config') activeNav = 'home'; 
+    if (['tarefas', 'calculadora', 'financeiro', 'notas', 'pomo', 'sounds'].includes(pageId)) activeNav = 'ferramentas';
+    if (pageId === 'edit-profile' || pageId === 'config') activeNav = 'home';
 
     const navBtn = document.getElementById('mob-nav-' + activeNav);
-    if(navBtn) {
+    if (navBtn) {
         navBtn.classList.remove('text-gray-400');
         navBtn.classList.add('text-indigo-600', 'dark:text-indigo-400');
     }
-    
-    if(window.lucide) lucide.createIcons();
+
+    if (window.lucide) lucide.createIcons();
 }
 
 window.navigateTo = (pageId) => {
@@ -429,15 +429,15 @@ window.navigateTo = (pageId) => {
 };
 
 // --- PERFIL E UPLOAD ---
-window.populateEditProfile = function() {
-    if(userProfileData) {
+window.populateEditProfile = function () {
+    if (userProfileData) {
         document.getElementById('edit-name').value = userProfileData.name || '';
         document.getElementById('edit-username').value = userProfileData.username || '';
         document.getElementById('edit-course').value = userProfileData.course || '';
         document.getElementById('edit-semester').value = userProfileData.semester || '';
-        
+
         const avatarUrl = userProfileData.avatarUrl || currentUser?.photoURL;
-        if(avatarUrl) document.getElementById('edit-profile-preview').src = avatarUrl;
+        if (avatarUrl) document.getElementById('edit-profile-preview').src = avatarUrl;
     }
 }
 
@@ -446,22 +446,22 @@ window.uploadToImgur = async (input) => {
     const file = input.files[0];
     if (!file) return;
     const status = document.getElementById('upload-status');
-    if(status) status.innerText = "Enviando...";
-    
+    if (status) status.innerText = "Enviando...";
+
     try {
         const url = await uploadToImgur(file); // Chama a função helper
         document.getElementById('edit-profile-preview').src = url;
-        if(status) status.innerText = "Sucesso!";
+        if (status) status.innerText = "Sucesso!";
         // Guarda temporariamente para salvar depois
         window.tempEditAvatarUrl = url;
     } catch (e) {
-        if(status) status.innerText = "Erro no upload.";
+        if (status) status.innerText = "Erro no upload.";
         console.error(e);
         alert("Erro ao enviar imagem. Verifique sua conexão.");
     }
 };
 
-window.saveProfileChanges = async function() {
+window.saveProfileChanges = async function () {
     const name = document.getElementById('edit-name').value;
     const username = document.getElementById('edit-username').value;
     const course = document.getElementById('edit-course').value;
@@ -469,17 +469,17 @@ window.saveProfileChanges = async function() {
     // Usa a URL nova se houve upload, ou mantém a antiga
     const avatarUrl = window.tempEditAvatarUrl || userProfileData.avatarUrl || currentUser?.photoURL;
 
-    if(!name || !username) return alert("Nome e usuário são obrigatórios.");
+    if (!name || !username) return alert("Nome e usuário são obrigatórios.");
 
-    if(currentUser) {
+    if (currentUser) {
         try {
             await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'profile'), {
                 name, username, course, semester, avatarUrl, updatedAt: Date.now()
             }, { merge: true });
-            
+
             alert("Perfil atualizado com sucesso!");
             window.navigateTo('perfil');
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             alert("Erro ao salvar perfil.");
         }
@@ -489,16 +489,16 @@ window.saveProfileChanges = async function() {
 // --- CHAT IA & HISTÓRICO ---
 function initChatSystem() {
     if (!currentUser) return;
-    
+
     // 1. Carregar lista de chats (Histórico)
     const chatsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads');
     const q = query(chatsRef, orderBy('updatedAt', 'desc'), limit(20));
-    
+
     onSnapshot(q, (snapshot) => {
         const historyList = document.getElementById('history-list');
         if (!historyList) return;
         historyList.innerHTML = '';
-        
+
         if (snapshot.empty) {
             historyList.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Nenhum histórico.</p>';
         }
@@ -507,7 +507,7 @@ function initChatSystem() {
             const chat = doc.data();
             const isActive = doc.id === activeChatId;
             const dateStr = chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : '';
-            
+
             historyList.innerHTML += `
                 <div class="group flex items-center gap-1 p-1">
                     <div onclick="loadChatSession('${doc.id}')" class="flex-1 p-3 rounded-xl cursor-pointer transition hover:bg-black/5 dark:hover:bg-white/10 ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}">
@@ -520,11 +520,11 @@ function initChatSystem() {
                 </div>
             `;
         });
-        if(window.lucide) lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     });
 }
 
-window.startNewChat = async function() {
+window.startNewChat = async function () {
     if (!currentUser) return;
     activeChatId = Date.now().toString();
     const container = document.getElementById('chat-messages');
@@ -540,7 +540,7 @@ window.startNewChat = async function() {
     listenToActiveChat();
 }
 
-window.loadChatSession = function(chatId) {
+window.loadChatSession = function (chatId) {
     if (activeChatId === chatId) {
         window.toggleHistory(false);
         return;
@@ -551,21 +551,21 @@ window.loadChatSession = function(chatId) {
     window.toggleHistory(false);
 }
 
-window.deleteChatThread = async function(threadId, event) {
-    if(event) event.stopPropagation();
-    if(!currentUser) return;
-    if(confirm("Excluir esta conversa?")) {
+window.deleteChatThread = async function (threadId, event) {
+    if (event) event.stopPropagation();
+    if (!currentUser) return;
+    if (confirm("Excluir esta conversa?")) {
         await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', threadId));
-        if(activeChatId === threadId) {
+        if (activeChatId === threadId) {
             activeChatId = null;
             const container = document.getElementById('chat-messages');
-            if(container) container.innerHTML = '';
+            if (container) container.innerHTML = '';
             addWelcomeMessage();
         }
     }
 }
 
-window.toggleHistory = function(show) {
+window.toggleHistory = function (show) {
     const drawer = document.getElementById('history-drawer');
     if (show) {
         drawer.classList.remove('translate-x-full');
@@ -577,7 +577,7 @@ window.toggleHistory = function(show) {
 function addWelcomeMessage() {
     const container = document.getElementById('chat-messages');
     if (!container) return;
-    
+
     container.innerHTML = `
         <div class="flex gap-3 max-w-[90%] animate-message-pop">
             <div class="w-8 h-8 rounded-full glass-inner flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-auto border border-white/20">
@@ -600,21 +600,21 @@ function listenToActiveChat() {
     chatUnsubscribe = onSnapshot(q, (snapshot) => {
         const container = document.getElementById('chat-messages');
         if (!container) return;
-        
+
         if (snapshot.empty && container.innerHTML.trim() === '') {
             addWelcomeMessage();
             return;
         }
 
-        if (!snapshot.empty) container.innerHTML = ''; 
+        if (!snapshot.empty) container.innerHTML = '';
         currentChatHistory = [];
 
         snapshot.forEach((doc) => {
             const msg = doc.data();
             currentChatHistory.push({ role: msg.role, text: msg.text }); // Guarda para contexto
-            
+
             const content = msg.type === 'image' ? `<img src="${msg.text}" class="rounded-lg max-h-48 border border-white/20">` : msg.text;
-            
+
             if (msg.role === 'user') {
                 container.innerHTML += `
                     <div class="flex gap-3 max-w-[85%] ml-auto animate-message-pop justify-end mb-4">
@@ -630,18 +630,18 @@ function listenToActiveChat() {
                     </div>`;
             }
         });
-        
+
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-        if(window.lucide) lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     });
 }
 
-window.setAIProvider = function(provider) {
+window.setAIProvider = function (provider) {
     currentAIProvider = provider;
     const btnGemini = document.getElementById('btn-ai-gemini');
     const btnGroq = document.getElementById('btn-ai-groq');
-    
-    if(provider === 'gemini') {
+
+    if (provider === 'gemini') {
         btnGemini.classList.add('bg-indigo-600', 'text-white');
         btnGemini.classList.remove('bg-white', 'dark:bg-slate-700', 'text-indigo-600');
         btnGroq.classList.remove('bg-indigo-600', 'text-white');
@@ -655,9 +655,9 @@ window.setAIProvider = function(provider) {
 }
 
 // NOVA FUNÇÃO DE ENVIO COM LIMITE DE CONTEXTO
-window.sendMessage = async function(textOverride = null, type = 'text') {
+window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!currentUser) return;
-    
+
     if (!activeChatId) {
         await startNewChat();
         await new Promise(r => setTimeout(r, 100));
@@ -668,16 +668,16 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
     if (!msgText) return;
     if (!textOverride) input.value = '';
 
-    if(organizaIA) {
+    if (organizaIA) {
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
-        
+
         const threadRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId);
         if (currentChatHistory.length < 2) {
-             await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
+            await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
         } else {
-             await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
+            await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
         }
 
         // Prepara dados do ônibus para a IA ter consciência
@@ -694,7 +694,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
-        
+
         const limitedHistory = currentChatHistory.slice(-10);
 
         const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider, limitedHistory);
@@ -709,7 +709,7 @@ window.sendMessage = async function(textOverride = null, type = 'text') {
 function getNextBusForContext() {
     const now = new Date();
     const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    
+
     // Busca na lista global busSchedule (definida lá embaixo)
     if (typeof busSchedule === 'undefined') return "Horários indisponíveis";
 
@@ -733,7 +733,7 @@ window.uploadChatImage = async (input) => {
     status.classList.remove('hidden');
     try {
         const url = await uploadToImgur(file); // Usa a função helper corrigida
-        await sendMessage(url, 'image'); 
+        await sendMessage(url, 'image');
     } catch (error) {
         console.error(error);
         alert('Erro no upload da imagem.');
@@ -743,30 +743,30 @@ window.uploadChatImage = async (input) => {
     }
 };
 
-window.openDonationModal = function() {
+window.openDonationModal = function () {
     const modal = document.getElementById('donation-value-modal');
     modal.classList.remove('hidden');
-    setTimeout(() => { 
-        modal.classList.remove('opacity-0'); 
-        modal.firstElementChild.classList.remove('scale-95'); 
-        modal.firstElementChild.classList.add('scale-100'); 
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
     }, 10);
 }
 
-window.closeDonationModal = function() {
+window.closeDonationModal = function () {
     const modal = document.getElementById('donation-value-modal');
-    modal.classList.add('opacity-0'); 
-    modal.firstElementChild.classList.remove('scale-100'); 
+    modal.classList.add('opacity-0');
+    modal.firstElementChild.classList.remove('scale-100');
     modal.firstElementChild.classList.add('scale-95');
     setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
-window.selectDonationValue = function(val) {
+window.selectDonationValue = function (val) {
     selectedDonationAmount = val;
     document.getElementById('custom-donation-input').value = '';
 }
 
-window.checkCustomValue = function() {
+window.checkCustomValue = function () {
     const input = document.getElementById('custom-donation-input');
     const val = parseFloat(input.value);
     if (!isNaN(val) && val > 0) {
@@ -774,12 +774,12 @@ window.checkCustomValue = function() {
     }
 }
 
-window.proceedToCpf = function() {
+window.proceedToCpf = function () {
     const customInput = document.getElementById('custom-donation-input').value;
-    if(customInput) selectedDonationAmount = parseFloat(customInput);
+    if (customInput) selectedDonationAmount = parseFloat(customInput);
 
     if (selectedDonationAmount < 1) return alert("Valor mínimo de R$ 1,00.");
-    
+
     window.closeDonationModal();
 
     window.openCustomInputModal(
@@ -802,8 +802,8 @@ async function processPaymentWithCpf(cpf) {
 
     if (modal) {
         modal.classList.remove('hidden');
-        qrImg.classList.add('opacity-50'); 
-        loader.classList.remove('hidden'); 
+        qrImg.classList.add('opacity-50');
+        loader.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modal.firstElementChild.classList.remove('scale-95');
@@ -824,7 +824,7 @@ async function processPaymentWithCpf(cpf) {
         });
 
         const data = await response.json();
-        
+
         if (data.error) throw new Error(data.error);
 
         currentPaymentId = data.id;
@@ -849,56 +849,128 @@ async function processPaymentWithCpf(cpf) {
     }
 }
 
-window.closePaymentModal = function() {
+window.closePaymentModal = function () {
     const modal = document.getElementById('payment-modal');
-    modal.classList.add('opacity-0'); 
-    modal.firstElementChild.classList.remove('scale-100'); 
+    modal.classList.add('opacity-0');
+    modal.firstElementChild.classList.remove('scale-100');
     modal.firstElementChild.classList.add('scale-95');
     setTimeout(() => modal.classList.add('hidden'), 300);
     if (paymentCheckInterval) clearInterval(paymentCheckInterval);
 }
 
-window.copyPixCode = function() {
+// Função moderna de Copiar
+window.copyPixCode = function () {
     const input = document.getElementById('pix-copy-paste');
-    input.select();
-    document.execCommand('copy');
-    alert("Copia e Cola copiado!");
+    const textToCopy = input.value;
+    const btnMain = document.getElementById('btn-copy-main');
+
+    // Usa a API Clipboard (mais moderna e segura que execCommand)
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // Feedback visual de sucesso
+        const originalText = btnMain.innerHTML;
+
+        // Muda o botão para verde
+        btnMain.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+        btnMain.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+        btnMain.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> <span>Copiado com Sucesso!</span>`;
+
+        // Dispara um toast/alerta flutuante
+        if (window.showModal) window.showModal("Sucesso", "Código Pix copiado para a área de transferência!");
+        else alert("Código Pix Copiado!");
+
+        // Volta ao normal depois de 3 segundos
+        setTimeout(() => {
+            btnMain.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            btnMain.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+            btnMain.innerHTML = originalText;
+            if (window.lucide) lucide.createIcons();
+        }, 3000);
+
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.");
+    });
 }
 
-async function checkPaymentStatus() {
-    if (!currentPaymentId) return;
+async function processPaymentWithCpf(cpf) {
+    const modal = document.getElementById('payment-modal');
+    const qrImg = document.getElementById('pix-qr-image');
+    const loader = document.getElementById('pix-loading');
+    const copyInput = document.getElementById('pix-copy-paste');
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        qrImg.classList.add('opacity-50');
+        loader.classList.remove('hidden');
+        copyInput.value = "Gerando código..."; // Feedback imediato no input
+
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }, 10);
+    }
+
     try {
-        const response = await fetch('/api/check_status', {
+        const response = await fetch('/api/create_pix', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: currentPaymentId })
+            body: JSON.stringify({
+                name: userProfileData?.name || "Apoiador",
+                email: currentUser?.email,
+                cpf: cpf,
+                value: selectedDonationAmount
+            })
         });
+
         const data = await response.json();
-        if (data.paid) {
-            clearInterval(paymentCheckInterval);
-            window.closePaymentModal();
-            alert("Pagamento Recebido! Muito obrigado ❤️");
+
+        if (data.error) throw new Error(data.error);
+
+        currentPaymentId = data.id;
+
+        // Atualiza a imagem do QR Code
+        if (qrImg && data.encodedImage) {
+            qrImg.src = `data:image/png;base64,${data.encodedImage}`;
+            qrImg.onload = () => {
+                qrImg.classList.remove('opacity-50');
+                loader.classList.add('hidden'); // Esconde o loader só quando a imagem carregar
+            };
         }
-    } catch (e) { console.log(e); }
+
+        // Atualiza o campo Copia e Cola
+        if (copyInput && data.payload) {
+            copyInput.value = data.payload;
+        }
+
+        // Inicia verificação de status
+        if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+        paymentCheckInterval = setInterval(checkPaymentStatus, 3000);
+
+    } catch (error) {
+        console.error("Erro Pagamento:", error);
+        window.closePaymentModal();
+        alert("Erro ao gerar PIX: " + error.message);
+    }
 }
 
-window.openCustomInputModal = function(title, placeholder, initialValue, onConfirm) {
+window.openCustomInputModal = function (title, placeholder, initialValue, onConfirm) {
     const modal = document.getElementById('custom-input-modal');
-    if(!modal) return;
+    if (!modal) return;
     document.getElementById('custom-modal-title').innerText = title;
     const input = document.getElementById('custom-modal-input');
     input.placeholder = placeholder;
     input.value = initialValue;
-    
+
     const btnConfirm = document.getElementById('custom-modal-confirm');
     const newBtn = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
-    
+
     newBtn.onclick = () => {
         const val = input.value;
         modal.classList.add('opacity-0');
         setTimeout(() => modal.classList.add('hidden'), 300);
-        if(onConfirm) onConfirm(val);
+        if (onConfirm) onConfirm(val);
     };
 
     const btnCancel = document.getElementById('custom-modal-cancel');
@@ -908,29 +980,29 @@ window.openCustomInputModal = function(title, placeholder, initialValue, onConfi
     };
 
     modal.classList.remove('hidden');
-    setTimeout(() => { 
-        modal.classList.remove('opacity-0'); 
-        modal.firstElementChild.classList.remove('scale-95'); 
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
         modal.firstElementChild.classList.add('scale-100');
-        input.focus(); 
+        input.focus();
     }, 10);
 }
 
-window.showModal = function(title, message) {
+window.showModal = function (title, message) {
     const m = document.getElementById('generic-modal');
     document.getElementById('generic-modal-title').innerText = title;
     document.getElementById('generic-modal-message').innerText = message;
     m.classList.remove('hidden');
     setTimeout(() => { m.classList.remove('opacity-0'); m.firstElementChild.classList.remove('scale-95'); m.firstElementChild.classList.add('scale-100'); }, 10);
 }
-window.closeGenericModal = function() {
-     const m = document.getElementById('generic-modal');
-     m.classList.add('opacity-0'); m.firstElementChild.classList.remove('scale-100'); m.firstElementChild.classList.add('scale-95');
-     setTimeout(() => m.classList.add('hidden'), 300);
+window.closeGenericModal = function () {
+    const m = document.getElementById('generic-modal');
+    m.classList.add('opacity-0'); m.firstElementChild.classList.remove('scale-100'); m.firstElementChild.classList.add('scale-95');
+    setTimeout(() => m.classList.add('hidden'), 300);
 }
 
 async function saveData() {
-    if(currentUser) {
+    if (currentUser) {
         await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'settings'), {
             schedule: scheduleData,
             widgetStyle: widgetStyle,
@@ -943,16 +1015,16 @@ async function saveData() {
     }
 }
 
-window.setWidgetStyle = function(style, save = true) {
+window.setWidgetStyle = function (style, save = true) {
     widgetStyle = style;
-    if(save) saveData();
+    if (save) saveData();
     updateWidgetStyleUI();
-    if(window.updateNextClassWidget) window.updateNextClassWidget();
+    if (window.updateNextClassWidget) window.updateNextClassWidget();
 };
 
-window.renderSchedule = function() {
+window.renderSchedule = function () {
     const container = document.getElementById('schedule-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '';
 
     const dayMap = { 'seg': 'Segunda', 'ter': 'Terça', 'qua': 'Quarta', 'qui': 'Quinta', 'sex': 'Sexta', 'sab': 'Sábado' };
@@ -964,7 +1036,7 @@ window.renderSchedule = function() {
     }
 
     daysOrder.forEach(dayKey => {
-        const dayClasses = scheduleData.filter(c => c.day === dayKey).sort((a, b) => parseInt(a.start.replace(':','')) - parseInt(b.start.replace(':','')));
+        const dayClasses = scheduleData.filter(c => c.day === dayKey).sort((a, b) => parseInt(a.start.replace(':', '')) - parseInt(b.start.replace(':', '')));
         if (dayClasses.length > 0) {
             let html = `<div class="mb-4"><h3 class="text-sm font-bold text-indigo-500 uppercase mb-2 ml-1">${dayMap[dayKey]}</h3><div class="space-y-3">`;
             dayClasses.forEach(c => {
@@ -984,49 +1056,49 @@ window.renderSchedule = function() {
     });
 };
 
-window.updateNextClassWidget = function() {
+window.updateNextClassWidget = function () {
     const container = document.getElementById('widget-next-class');
-    if(!container) return;
-    
+    if (!container) return;
+
     const now = new Date();
     const daysArr = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
     const currentDay = daysArr[now.getDay()];
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    const todayClasses = scheduleData.filter(c => c.day === currentDay).sort((a, b) => parseInt(a.start.replace(':','')) - parseInt(b.start.replace(':','')));
-    
+
+    const todayClasses = scheduleData.filter(c => c.day === currentDay).sort((a, b) => parseInt(a.start.replace(':', '')) - parseInt(b.start.replace(':', '')));
+
     let nextClass = null;
     let status = "";
 
-    for(let c of todayClasses) {
+    for (let c of todayClasses) {
         const [h, m] = c.start.split(':').map(Number);
         const startMins = h * 60 + m;
         let endMins = startMins + 60;
-        if(c.end) { const [hE, mE] = c.end.split(':').map(Number); endMins = hE * 60 + mE; }
-        
+        if (c.end) { const [hE, mE] = c.end.split(':').map(Number); endMins = hE * 60 + mE; }
+
         if (currentMinutes < startMins) { nextClass = c; status = 'future'; break; }
         else if (currentMinutes >= startMins && currentMinutes < endMins) { nextClass = c; status = 'now'; break; }
     }
 
-    if(nextClass) {
-        const [hS, mS] = nextClass.start.split(':').map(Number); 
-        const startMins = hS * 60 + mS; 
-        let endMins = startMins + 60; 
-        if(nextClass.end) { const [hE, mE] = nextClass.end.split(':').map(Number); endMins = hE * 60 + mE; }
-        
-        let timeText = ""; 
+    if (nextClass) {
+        const [hS, mS] = nextClass.start.split(':').map(Number);
+        const startMins = hS * 60 + mS;
+        let endMins = startMins + 60;
+        if (nextClass.end) { const [hE, mE] = nextClass.end.split(':').map(Number); endMins = hE * 60 + mE; }
+
+        let timeText = "";
         let progressPercentage = 0;
-        
-        if(status === 'future') { 
-            const diff = startMins - currentMinutes; 
-            const dh = Math.floor(diff/60); 
-            const dm = diff%60; 
-            timeText = dh > 0 ? `Em ${dh}h ${dm}m` : `Em ${dm} min`; 
-        } else { 
-            timeText = "Agora"; 
-            const totalDuration = endMins - startMins; 
-            const elapsed = currentMinutes - startMins; 
-            progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); 
+
+        if (status === 'future') {
+            const diff = startMins - currentMinutes;
+            const dh = Math.floor(diff / 60);
+            const dm = diff % 60;
+            timeText = dh > 0 ? `Em ${dh}h ${dm}m` : `Em ${dm} min`;
+        } else {
+            timeText = "Agora";
+            const totalDuration = endMins - startMins;
+            const elapsed = currentMinutes - startMins;
+            progressPercentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
         }
 
         container.className = "glass-panel p-4 rounded-[2rem] min-h-[9rem] flex flex-col justify-center text-center active:scale-95 transition hover:shadow-lg group cursor-pointer relative overflow-hidden";
@@ -1070,19 +1142,19 @@ window.updateNextClassWidget = function() {
             </div>
         `;
     }
-    if(window.lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 const timeSlots = ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"];
 
-window.openAddClassModal = function() {
+window.openAddClassModal = function () {
     document.getElementById('modal-title').innerText = "Adicionar Aula";
     document.getElementById('class-id').value = "";
     document.getElementById('class-name').value = "";
     document.getElementById('class-prof').value = "";
     document.getElementById('class-room').value = "";
     document.getElementById('btn-delete-class').classList.add('hidden');
-    
+
     const startSel = document.getElementById('class-start');
     const endSel = document.getElementById('class-end');
     const opts = timeSlots.map(t => `<option value="${t}">${t}</option>`).join('');
@@ -1091,13 +1163,13 @@ window.openAddClassModal = function() {
     startSel.value = "07:00";
     autoSetEndTime();
     renderColorPicker();
-    
+
     toggleModal(true);
 }
 
-window.openEditClassModal = function(id) {
+window.openEditClassModal = function (id) {
     const c = scheduleData.find(x => x.id === id);
-    if(!c) return;
+    if (!c) return;
     document.getElementById('modal-title').innerText = "Editar Aula";
     document.getElementById('class-id').value = c.id;
     document.getElementById('class-name').value = c.name;
@@ -1114,7 +1186,7 @@ window.openEditClassModal = function(id) {
     toggleModal(true);
 }
 
-window.saveClass = function() {
+window.saveClass = function () {
     const id = document.getElementById('class-id').value;
     const name = document.getElementById('class-name').value;
     const prof = document.getElementById('class-prof').value;
@@ -1123,25 +1195,25 @@ window.saveClass = function() {
     const start = document.getElementById('class-start').value;
     const end = document.getElementById('class-end').value;
 
-    if(!name) return alert("Nome da matéria é obrigatório");
+    if (!name) return alert("Nome da matéria é obrigatório");
 
     const newClass = { id: id || Date.now().toString(), name, prof, room, day, start, end, color: selectedColor };
-    
-    if(id) {
+
+    if (id) {
         const idx = scheduleData.findIndex(x => x.id === id);
-        if(idx !== -1) scheduleData[idx] = newClass;
+        if (idx !== -1) scheduleData[idx] = newClass;
     } else {
         scheduleData.push(newClass);
     }
-    
+
     saveData();
     toggleModal(false);
     renderSchedule();
 }
 
-window.toggleModal = function(show) {
+window.toggleModal = function (show) {
     const modal = document.getElementById('class-modal');
-    if(show) {
+    if (show) {
         modal.classList.remove('hidden');
         setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
     } else {
@@ -1150,77 +1222,77 @@ window.toggleModal = function(show) {
     }
 }
 
-window.autoSetEndTime = function() { 
-    const start = document.getElementById('class-start').value; 
-    const endSel = document.getElementById('class-end'); 
-    const idx = timeSlots.indexOf(start); 
-    if(idx !== -1 && idx + 2 < timeSlots.length) endSel.value = timeSlots[idx + 2]; 
+window.autoSetEndTime = function () {
+    const start = document.getElementById('class-start').value;
+    const endSel = document.getElementById('class-end');
+    const idx = timeSlots.indexOf(start);
+    if (idx !== -1 && idx + 2 < timeSlots.length) endSel.value = timeSlots[idx + 2];
 }
 
-function renderColorPicker() { 
-    const container = document.getElementById('color-picker-container'); 
-    container.innerHTML = Object.keys(colorPalettes).map(color => { 
-        const style = colorPalettes[color]; 
-        const active = selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-900 scale-110' : ''; 
-        return `<button onclick="window.setColor('${color}')" class="w-8 h-8 rounded-full ${style.bg.split(' ')[0]} border border-gray-200 ${active} transition hover:scale-105"></button>`; 
-    }).join(''); 
+function renderColorPicker() {
+    const container = document.getElementById('color-picker-container');
+    container.innerHTML = Object.keys(colorPalettes).map(color => {
+        const style = colorPalettes[color];
+        const active = selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-900 scale-110' : '';
+        return `<button onclick="window.setColor('${color}')" class="w-8 h-8 rounded-full ${style.bg.split(' ')[0]} border border-gray-200 ${active} transition hover:scale-105"></button>`;
+    }).join('');
 }
 
 window.setColor = (c) => { selectedColor = c; renderColorPicker(); }
 
 window.requestDeleteClass = () => { classToDeleteId = document.getElementById('class-id').value; toggleModal(false); const modal = document.getElementById('delete-confirm-modal'); modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10); }
-window.confirmDeleteClass = function() { if(!classToDeleteId) return; scheduleData = scheduleData.filter(x => x.id !== classToDeleteId); saveData(); closeDeleteModal(); }
+window.confirmDeleteClass = function () { if (!classToDeleteId) return; scheduleData = scheduleData.filter(x => x.id !== classToDeleteId); saveData(); closeDeleteModal(); }
 window.closeDeleteModal = () => { const modal = document.getElementById('delete-confirm-modal'); modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); classToDeleteId = null; }
 window.deleteClass = window.requestDeleteClass;
 
-window.openAddTaskModal = function() {
-     const modal = document.getElementById('task-modal');
-     modal.classList.remove('hidden');
-     setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
-     document.getElementById('new-task-title').value = '';
-     document.getElementById('new-task-date').value = '';
-     selectTaskCategory('estudo');
- }
+window.openAddTaskModal = function () {
+    const modal = document.getElementById('task-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
+    document.getElementById('new-task-title').value = '';
+    document.getElementById('new-task-date').value = '';
+    selectTaskCategory('estudo');
+}
 
- window.closeTaskModal = function() {
-     const modal = document.getElementById('task-modal');
-     modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
-     setTimeout(() => modal.classList.add('hidden'), 300);
- }
+window.closeTaskModal = function () {
+    const modal = document.getElementById('task-modal');
+    modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
 
- window.selectTaskCategory = function(cat) {
-     selectedTaskCategory = cat;
-     document.querySelectorAll('.cat-btn').forEach(btn => {
-         btn.classList.add('opacity-50', 'scale-95');
-         btn.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-400');
+window.selectTaskCategory = function (cat) {
+    selectedTaskCategory = cat;
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.classList.add('opacity-50', 'scale-95');
+        btn.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-400');
     });
-     const btn = document.getElementById('cat-' + cat);
-     btn.classList.remove('opacity-50', 'scale-95');
-     btn.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-400');
- }
+    const btn = document.getElementById('cat-' + cat);
+    btn.classList.remove('opacity-50', 'scale-95');
+    btn.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-400');
+}
 
- window.confirmAddTask = function() {
-     const title = document.getElementById('new-task-title').value;
-     const date = document.getElementById('new-task-date').value;
-     if(!title.trim()) return alert("Digite o título da tarefa");
-     tasksData.unshift({ id: Date.now(), text: title, category: selectedTaskCategory, date: date, done: false });
-     saveData();
-     closeTaskModal();
- }
+window.confirmAddTask = function () {
+    const title = document.getElementById('new-task-title').value;
+    const date = document.getElementById('new-task-date').value;
+    if (!title.trim()) return alert("Digite o título da tarefa");
+    tasksData.unshift({ id: Date.now(), text: title, category: selectedTaskCategory, date: date, done: false });
+    saveData();
+    closeTaskModal();
+}
 
-window.toggleTask = function(id) { const t = tasksData.find(x => x.id === id); if(t) { t.done = !t.done; saveData(); } }
-window.deleteTask = function(id) { tasksData = tasksData.filter(x => x.id !== id); saveData(); }
+window.toggleTask = function (id) { const t = tasksData.find(x => x.id === id); if (t) { t.done = !t.done; saveData(); } }
+window.deleteTask = function (id) { tasksData = tasksData.filter(x => x.id !== id); saveData(); }
 
-window.setTaskTab = function(tab) {
+window.setTaskTab = function (tab) {
     currentTaskTab = tab;
     const pendingBtn = document.getElementById('tab-pending');
     const completedBtn = document.getElementById('tab-completed');
-    if(tab === 'pending') { pendingBtn.classList.add('tab-active'); pendingBtn.classList.remove('hover:bg-white/10'); completedBtn.classList.remove('tab-active'); completedBtn.classList.add('hover:bg-white/10'); } 
+    if (tab === 'pending') { pendingBtn.classList.add('tab-active'); pendingBtn.classList.remove('hover:bg-white/10'); completedBtn.classList.remove('tab-active'); completedBtn.classList.add('hover:bg-white/10'); }
     else { completedBtn.classList.add('tab-active'); completedBtn.classList.remove('hover:bg-white/10'); pendingBtn.classList.remove('tab-active'); pendingBtn.classList.add('hover:bg-white/10'); }
     if (window.renderTasks) window.renderTasks();
 }
 
-window.renderTasks = function() {
+window.renderTasks = function () {
     const list = document.getElementById('todo-list');
     list.innerHTML = '';
     const total = tasksData.length;
@@ -1237,7 +1309,7 @@ window.renderTasks = function() {
     filteredTasks.forEach(t => {
         const item = document.createElement('div');
         item.className = `flex flex-col gap-2 p-4 glass-inner rounded-2xl ${t.done ? 'opacity-60' : ''}`;
-        const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'}) : '';
+        const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
         const badgeClass = catColors[t.category] || catColors['estudo'];
         item.innerHTML = `
             <div class="flex items-start gap-3">
@@ -1263,34 +1335,34 @@ let currentInput = '0';
 let isResult = false;
 let isRadians = true;
 
-window.appendNumber = function(number) {
+window.appendNumber = function (number) {
     if (isResult) { currentInput = number; isResult = false; }
     else { if (currentInput === '0' && number !== '.') currentInput = number; else currentInput += number; }
     updateDisplay();
 }
-window.appendOperator = function(op) { isResult = false; currentInput += op; updateDisplay(); }
-window.appendConstant = function(c) {
+window.appendOperator = function (op) { isResult = false; currentInput += op; updateDisplay(); }
+window.appendConstant = function (c) {
     if (isResult) { currentInput = ''; isResult = false; }
     if (currentInput !== '0' && currentInput !== '') { const last = currentInput.slice(-1); if (!isNaN(last) || last === ')') currentInput += '*'; }
     if (c === 'pi') currentInput += 'π'; if (c === 'e') currentInput += 'e';
     updateDisplay();
 }
-window.appendFunction = function(fn) {
-     if (isResult) { currentInput = ''; isResult = false; }
-     if (currentInput === '0') currentInput = '';
-     if (currentInput.length > 0) { const last = currentInput.slice(-1); if (!isNaN(last) || last === 'π' || last === 'e' || last === ')') currentInput += '*'; }
-     currentInput += fn + '(';
-     updateDisplay();
+window.appendFunction = function (fn) {
+    if (isResult) { currentInput = ''; isResult = false; }
+    if (currentInput === '0') currentInput = '';
+    if (currentInput.length > 0) { const last = currentInput.slice(-1); if (!isNaN(last) || last === 'π' || last === 'e' || last === ')') currentInput += '*'; }
+    currentInput += fn + '(';
+    updateDisplay();
 }
-window.clearDisplay = function() { currentInput = '0'; document.getElementById('calc-history').textContent = ''; isResult = false; updateDisplay(); }
-window.deleteLast = function() {
-     if (isResult) { clearDisplay(); return; }
-     if (currentInput.length <= 1 || currentInput === 'Error') { currentInput = '0'; } else { currentInput = currentInput.slice(0, -1); }
-     updateDisplay();
+window.clearDisplay = function () { currentInput = '0'; document.getElementById('calc-history').textContent = ''; isResult = false; updateDisplay(); }
+window.deleteLast = function () {
+    if (isResult) { clearDisplay(); return; }
+    if (currentInput.length <= 1 || currentInput === 'Error') { currentInput = '0'; } else { currentInput = currentInput.slice(0, -1); }
+    updateDisplay();
 }
-window.factorial = function(n) { if (n < 0 || !Number.isInteger(n)) return NaN; if (n === 0 || n === 1) return 1; let r = 1; for(let i=2; i<=n; i++) r *= i; return r; }
+window.factorial = function (n) { if (n < 0 || !Number.isInteger(n)) return NaN; if (n === 0 || n === 1) return 1; let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
 
-window.calculate = function() {
+window.calculate = function () {
     try {
         const raw = currentInput;
         let expr = currentInput.replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E').replace(/\^/g, '**').replace(/sqrt\(/g, 'Math.sqrt(').replace(/log\(/g, 'Math.log10(').replace(/ln\(/g, 'Math.log(').replace(/%/g, '/100');
@@ -1311,49 +1383,49 @@ window.calculate = function() {
 }
 function updateDisplay() {
     const display = document.getElementById('calc-display');
-    if(display) { display.textContent = currentInput; display.scrollLeft = display.scrollWidth; }
+    if (display) { display.textContent = currentInput; display.scrollLeft = display.scrollWidth; }
 }
-window.toggleCalcMode = function() {
+window.toggleCalcMode = function () {
     isRadians = !isRadians;
     const btn = document.getElementById('toggleMode');
-    if(btn) { btn.textContent = isRadians ? 'RAD' : 'DEG'; btn.classList.toggle('mode-active'); }
+    if (btn) { btn.textContent = isRadians ? 'RAD' : 'DEG'; btn.classList.toggle('mode-active'); }
 }
-window.copyToClipboard = function() {
+window.copyToClipboard = function () {
     navigator.clipboard.writeText(currentInput).then(() => {
         const tt = document.getElementById('copyTooltip');
-        if(tt) { tt.style.opacity = '1'; setTimeout(() => tt.style.opacity = '0', 1500); }
+        if (tt) { tt.style.opacity = '1'; setTimeout(() => tt.style.opacity = '0', 1500); }
     });
 }
 
-window.openAddTransactionModal = function() {
+window.openAddTransactionModal = function () {
     const modal = document.getElementById('finance-modal');
     modal.classList.remove('hidden');
     setTimeout(() => { modal.classList.remove('opacity-0'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
 }
-window.closeFinanceModal = function() {
+window.closeFinanceModal = function () {
     const modal = document.getElementById('finance-modal');
     modal.classList.add('opacity-0'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
     setTimeout(() => modal.classList.add('hidden'), 300);
 }
-window.addTransaction = function() {
+window.addTransaction = function () {
     const desc = document.getElementById('fin-desc').value;
     const val = parseFloat(document.getElementById('fin-val').value);
-    if(desc && val) {
+    if (desc && val) {
         financeData.unshift({ id: Date.now(), desc, val, date: new Date().toISOString() });
         saveData();
         closeFinanceModal();
         document.getElementById('fin-desc').value = ''; document.getElementById('fin-val').value = '';
     }
 }
-window.deleteTransaction = function(id) {
+window.deleteTransaction = function (id) {
     financeData = financeData.filter(x => x.id !== id);
     saveData();
 }
 
-window.setMonthlyBudget = function() {
+window.setMonthlyBudget = function () {
     window.openCustomInputModal("Definir Orçamento Mensal", "Ex: 800.00", monthlyBudget.toString(), (val) => {
         const budget = parseFloat(val.replace(',', '.'));
-        if(!isNaN(budget)) {
+        if (!isNaN(budget)) {
             monthlyBudget = budget;
             saveData();
             window.showModal("Sucesso", "Orçamento atualizado!");
@@ -1361,16 +1433,16 @@ window.setMonthlyBudget = function() {
     });
 }
 
-window.renderFinance = function() {
+window.renderFinance = function () {
     const list = document.getElementById('finance-list');
     const budgetDisplay = document.getElementById('fin-budget-display');
     const totalSpentDisplay = document.getElementById('fin-total-spent');
     const remainingDisplay = document.getElementById('fin-remaining');
     const progressBar = document.getElementById('fin-progress-bar');
-    
+
     if (!list) return;
     list.innerHTML = '';
-    
+
     const totalSpent = financeData.reduce((acc, curr) => acc + curr.val, 0);
     const remaining = monthlyBudget - totalSpent;
     const percent = monthlyBudget > 0 ? Math.min(100, (totalSpent / monthlyBudget) * 100) : 0;
@@ -1379,17 +1451,17 @@ window.renderFinance = function() {
     totalSpentDisplay.innerText = `R$ ${totalSpent.toFixed(2)}`;
     remainingDisplay.innerText = `Restante: R$ ${remaining.toFixed(2)}`;
     progressBar.style.width = `${percent}%`;
-    
-    if(percent > 90) progressBar.className = "h-full bg-red-500 transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
-    else if(percent > 70) progressBar.className = "h-full bg-yellow-400 transition-all duration-500 shadow-[0_0_10px_rgba(250,204,21,0.5)]";
+
+    if (percent > 90) progressBar.className = "h-full bg-red-500 transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
+    else if (percent > 70) progressBar.className = "h-full bg-yellow-400 transition-all duration-500 shadow-[0_0_10px_rgba(250,204,21,0.5)]";
     else progressBar.className = "h-full bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]";
 
-    if(financeData.length === 0) {
-          list.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhum gasto registrado.</div>';
+    if (financeData.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 bg-white/20 dark:bg-white/5 rounded-xl border border-white/10">Nenhum gasto registrado.</div>';
     } else {
         financeData.forEach(t => {
             const dateObj = new Date(t.date);
-            const dateStr = dateObj.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+            const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             list.innerHTML += `
                 <div class="flex justify-between items-center p-3 glass-inner rounded-xl">
                     <div>
@@ -1416,13 +1488,13 @@ const noteColors = {
     gray: 'bg-white/10 dark:bg-white/5 border-white/20 text-gray-700 dark:text-gray-300 glass-inner'
 };
 
-window.renderNotes = function() {
+window.renderNotes = function () {
     const container = document.getElementById('view-notas');
-    if(!container) return;
-    
-    if(activeNoteId) {
+    if (!container) return;
+
+    if (activeNoteId) {
         const note = notesData.find(n => n.id === activeNoteId);
-        if(note) {
+        if (note) {
             const currentColor = note.color || 'gray';
             container.innerHTML = `
                 <div class="flex flex-col h-full animate-fade-in p-4">
@@ -1474,11 +1546,11 @@ window.renderNotes = function() {
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
     `;
-    
-    if(notesData.length === 0) {
+
+    if (notesData.length === 0) {
         html += `<div class="col-span-full text-center py-10 text-gray-400"><p>Nenhuma nota criada.</p></div>`;
     } else {
-        const sortedNotes = [...notesData].sort((a,b) => {
+        const sortedNotes = [...notesData].sort((a, b) => {
             if (a.pinned && !b.pinned) return -1;
             if (!a.pinned && b.pinned) return 1;
             return b.updatedAt - a.updatedAt;
@@ -1487,7 +1559,7 @@ window.renderNotes = function() {
         sortedNotes.forEach(note => {
             const date = new Date(note.updatedAt).toLocaleDateString('pt-BR');
             const colorStyle = noteColors[note.color || 'gray'];
-            
+
             html += `
                 <div onclick="openNote('${note.id}')" class="h-full rounded-[1.5rem] p-5 cursor-pointer hover:scale-[1.02] transition shadow-sm border backdrop-blur-md ${colorStyle} relative group flex flex-col justify-between min-h-[140px]">
                     <div>
@@ -1505,7 +1577,7 @@ window.renderNotes = function() {
     lucide.createIcons();
 }
 
-window.createNote = function() {
+window.createNote = function () {
     const id = Date.now().toString();
     notesData.unshift({ id, title: '', content: '', updatedAt: Date.now(), color: 'gray', pinned: false });
     activeNoteId = id;
@@ -1513,57 +1585,57 @@ window.createNote = function() {
     window.renderNotes();
 }
 
-window.openNote = function(id) {
+window.openNote = function (id) {
     activeNoteId = id;
     window.renderNotes();
 }
 
-window.closeNote = function() {
+window.closeNote = function () {
     activeNoteId = null;
     saveData();
     window.renderNotes();
 }
 
-window.setNoteColor = function(id, color) {
+window.setNoteColor = function (id, color) {
     const note = notesData.find(n => n.id === id);
-    if(note) {
+    if (note) {
         note.color = color;
         saveData();
-        window.renderNotes(); 
+        window.renderNotes();
     }
 }
 
-window.togglePinNote = function(id) {
+window.togglePinNote = function (id) {
     const note = notesData.find(n => n.id === id);
-    if(note) {
+    if (note) {
         note.pinned = !note.pinned;
         saveData();
         window.renderNotes();
     }
 }
 
-window.updateNoteTitle = function(id, val) {
+window.updateNoteTitle = function (id, val) {
     const note = notesData.find(n => n.id === id);
-    if(note) {
+    if (note) {
         note.title = val;
         note.updatedAt = Date.now();
         debouncedSave();
     }
 }
 
-window.updateNoteContent = function(id, val) {
+window.updateNoteContent = function (id, val) {
     const note = notesData.find(n => n.id === id);
-    if(note) {
+    if (note) {
         note.content = val;
         note.updatedAt = Date.now();
         debouncedSave();
     }
 }
 
-window.deleteNote = function(id) {
-    if(confirm('Excluir esta nota permanentemente?')) {
+window.deleteNote = function (id) {
+    if (confirm('Excluir esta nota permanentemente?')) {
         notesData = notesData.filter(n => n.id !== id);
-        if(activeNoteId === id) activeNoteId = null;
+        if (activeNoteId === id) activeNoteId = null;
         saveData();
         window.renderNotes();
     }
@@ -1571,12 +1643,12 @@ window.deleteNote = function(id) {
 
 function debouncedSave() {
     const status = document.getElementById('save-status');
-    if(status) status.classList.remove('opacity-0');
-    
+    if (status) status.classList.remove('opacity-0');
+
     clearTimeout(noteSaveTimeout);
     noteSaveTimeout = setTimeout(() => {
         saveData();
-        if(status) {
+        if (status) {
             status.innerText = "• Salvo";
             setTimeout(() => status.classList.add('opacity-0'), 2000);
         }
@@ -1586,26 +1658,26 @@ function debouncedSave() {
 let timerInterval, timeLeft = 1500, isRunning = false, timerMode = 'pomodoro';
 const modes = { pomodoro: 1500, short: 300, long: 900 };
 
-window.toggleTimer = function() {
+window.toggleTimer = function () {
     const btn = document.getElementById('btn-timer-start');
-    if(isRunning) {
+    if (isRunning) {
         clearInterval(timerInterval);
         isRunning = false;
-        if(btn) {
+        if (btn) {
             btn.classList.remove('bg-red-500', 'hover:bg-red-600');
             btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
             btn.innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
         }
     } else {
         isRunning = true;
-        if(btn) {
+        if (btn) {
             btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
             btn.classList.add('bg-red-500', 'hover:bg-red-600');
             btn.innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
         }
-        
+
         timerInterval = setInterval(() => {
-            if(timeLeft > 0) {
+            if (timeLeft > 0) {
                 timeLeft--;
                 updateTimerDisplay();
             } else {
@@ -1619,7 +1691,7 @@ window.toggleTimer = function() {
     lucide.createIcons();
 }
 
-window.resetTimer = function() {
+window.resetTimer = function () {
     clearInterval(timerInterval);
     isRunning = false;
     timeLeft = modes[timerMode];
@@ -1629,7 +1701,7 @@ window.resetTimer = function() {
 
 function resetTimerUI() {
     const btn = document.getElementById('btn-timer-start');
-    if(btn) {
+    if (btn) {
         btn.classList.remove('bg-red-500', 'hover:bg-red-600');
         btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
         btn.innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
@@ -1637,11 +1709,11 @@ function resetTimerUI() {
     }
 }
 
-window.setTimerMode = function(mode) {
+window.setTimerMode = function (mode) {
     timerMode = mode;
     resetTimer();
     const label = document.getElementById('timer-label');
-    if(label) label.innerText = mode === 'pomodoro' ? 'Foco' : (mode === 'short' ? 'Curta' : 'Longa');
+    if (label) label.innerText = mode === 'pomodoro' ? 'Foco' : (mode === 'short' ? 'Curta' : 'Longa');
 }
 
 function updateTimerDisplay() {
@@ -1649,9 +1721,9 @@ function updateTimerDisplay() {
     const s = timeLeft % 60;
     const display = document.getElementById('timer-display');
     const circle = document.getElementById('timer-circle');
-    if(display) display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    
-    if(circle) {
+    if (display) display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+    if (circle) {
         const total = modes[timerMode];
         const offset = 816 - (timeLeft / total) * 816;
         circle.style.strokeDashoffset = offset;
@@ -1659,19 +1731,19 @@ function updateTimerDisplay() {
 }
 
 let currentSound = null;
-window.toggleSound = function(type) {
+window.toggleSound = function (type) {
     const audio = document.getElementById(`audio-${type}`);
     const card = document.getElementById(`card-${type}`);
-    if(!audio) return;
+    if (!audio) return;
 
-    if(currentSound === type) {
+    if (currentSound === type) {
         audio.pause();
         card.classList.remove('playing');
         currentSound = null;
     } else {
         document.querySelectorAll('audio').forEach(a => { a.pause(); a.currentTime = 0; });
         document.querySelectorAll('[id^="card-"]').forEach(c => c.classList.remove('playing'));
-        
+
         audio.play();
         card.classList.add('playing');
         currentSound = type;
@@ -1682,120 +1754,120 @@ function addTime(baseTime, minutesToAdd) { const [h, m] = baseTime.split(':').ma
 function createTrip(startTime, endTime, routeType, speed = 'normal') { let stops = []; const factor = speed === 'fast' ? 0.7 : 1.0; if (routeType === 'saida-garagem') stops = [{ loc: 'Garagem', t: 0 }, { loc: 'RU', t: 2 }, { loc: 'Fitotecnia', t: 4 }, { loc: 'Solos', t: 6 }, { loc: 'Pav I', t: 8 }, { loc: 'Biblioteca', t: 10 }, { loc: 'Pav II', t: 12 }, { loc: 'Engenharia', t: 13 }, { loc: 'Portão II', t: 15 }, { loc: 'RU', t: 24 }]; else if (routeType === 'volta-campus') stops = [{ loc: 'RU', t: 0 }, { loc: 'Fitotecnia', t: 2 }, { loc: 'Solos', t: 4 }, { loc: 'Pav I', t: 6 }, { loc: 'Biblioteca', t: 8 }, { loc: 'Pav II', t: 10 }, { loc: 'Engenharia', t: 11 }, { loc: 'Portão II', t: 13 }, { loc: 'RU', t: 22 }]; else if (routeType === 'recolhe') stops = [{ loc: 'RU', t: 0 }, { loc: 'Fitotecnia', t: 2 }, { loc: 'Solos', t: 4 }, { loc: 'Garagem', t: 15 }]; else if (routeType === 'volta-e-recolhe') stops = [{ loc: 'RU', t: 0 }, { loc: 'Pav I', t: 5 }, { loc: 'Biblioteca', t: 6 }, { loc: 'Pav II', t: 8 }, { loc: 'Garagem', t: 25 }]; return { start: startTime, end: endTime, origin: routeType.includes('garagem') ? 'Garagem' : 'Campus', dest: routeType.includes('recolhe') ? 'Garagem' : 'Campus', route: routeType, stops: stops.map(s => ({ loc: s.loc, time: addTime(startTime, Math.round(s.t * factor)) })) }; }
 const busSchedule = [createTrip('06:25', '06:50', 'saida-garagem'), createTrip('06:50', '07:10', 'volta-campus', 'fast'), createTrip('07:10', '07:25', 'volta-campus', 'fast'), createTrip('07:25', '07:40', 'volta-campus', 'fast'), createTrip('07:40', '07:55', 'volta-campus', 'fast'), createTrip('07:55', '08:20', 'volta-e-recolhe'), createTrip('09:35', '10:00', 'saida-garagem'), createTrip('10:00', '10:25', 'volta-e-recolhe'), createTrip('11:30', '11:55', 'saida-garagem'), createTrip('11:55', '12:20', 'volta-campus'), createTrip('12:20', '12:45', 'volta-e-recolhe'), createTrip('13:00', '13:25', 'saida-garagem'), createTrip('13:25', '13:45', 'volta-campus'), createTrip('13:45', '14:00', 'volta-campus'), createTrip('14:00', '14:25', 'volta-e-recolhe'), createTrip('15:35', '16:00', 'saida-garagem'), createTrip('16:00', '16:25', 'volta-e-recolhe'), createTrip('17:30', '17:55', 'saida-garagem'), createTrip('17:55', '18:15', 'volta-campus'), createTrip('18:15', '18:40', 'volta-e-recolhe'), createTrip('20:00', '20:20', 'volta-e-recolhe', 'fast'), createTrip('20:40', '21:00', 'volta-e-recolhe', 'fast'), createTrip('21:40', '22:00', 'volta-e-recolhe', 'fast'), createTrip('22:30', '22:50', 'volta-e-recolhe', 'fast')];
 
-function updateBusWidget() { 
-    const now = new Date(); 
-    const day = now.getDay(); 
+function updateBusWidget() {
+    const now = new Date();
+    const day = now.getDay();
     const timelineContainer = document.getElementById('bus-timeline');
-    
-    if (day === 0 || day === 6) { 
-        if(document.getElementById('bus-next-time')) document.getElementById('bus-next-time').innerText = "OFF"; 
-        if(document.getElementById('bus-status-text')) document.getElementById('bus-status-text').innerText = "FIM DE SEMANA"; 
-        if(document.getElementById('bus-status-dot')) document.getElementById('bus-status-dot').className = "w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm"; 
-        if(document.getElementById('bus-route-desc')) document.getElementById('bus-route-desc').innerHTML = '<i data-lucide="moon" class="w-3 h-3"></i> Bom descanso!'; 
-        if(document.getElementById('bus-progress-bar')) document.getElementById('bus-progress-bar').style.width = "0%"; 
-        if(document.getElementById('bus-eta')) document.getElementById('bus-eta').innerText = "Retorna segunda-feira"; 
-        if(timelineContainer) timelineContainer.innerHTML = ''; 
-        if(window.lucide) lucide.createIcons(); 
-        return; 
-    } 
-    const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds(); 
-    let activeBus = null, nextBus = null, timeDiff = Infinity; 
-    for (let bus of busSchedule) { 
-        const [h1, m1] = bus.start.split(':').map(Number); 
-        const [h2, m2] = bus.end.split(':').map(Number); 
-        const startSeconds = h1 * 3600 + m1 * 60; 
-        const endSeconds = h2 * 3600 + m2 * 60; 
-        if (currentTotalSeconds >= startSeconds && currentTotalSeconds < endSeconds) { 
-            activeBus = bus; activeBus.startSeconds = startSeconds; activeBus.endSeconds = endSeconds; break; 
-        } 
-        if (startSeconds > currentTotalSeconds) { 
-            const diff = startSeconds - currentTotalSeconds; 
-            if (diff < timeDiff) { timeDiff = diff; nextBus = bus; } 
-        } 
-    } 
-    const statusText = document.getElementById('bus-status-text'), timeDisplay = document.getElementById('bus-next-time'), descDisplay = document.getElementById('bus-route-desc'), progressBar = document.getElementById('bus-progress-bar'), etaDisplay = document.getElementById('bus-eta'); 
-    
-    if(!statusText) return;
 
-    if (activeBus) { 
-        statusText.innerText = "EM TRÂNSITO"; 
-        timeDisplay.innerText = activeBus.end; 
-        descDisplay.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 text-indigo-500"></i> Destino: ${activeBus.dest}`; 
-        const totalDuration = activeBus.endSeconds - activeBus.startSeconds; 
-        const elapsed = currentTotalSeconds - activeBus.startSeconds; 
-        const percent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)); 
-        progressBar.style.width = `${percent}%`; 
-        etaDisplay.innerText = `Chega em aprox. ${Math.ceil((activeBus.endSeconds - currentTotalSeconds) / 60)} min`; 
-        
-        if(timelineContainer) { 
-            let html = '<div class="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>'; 
+    if (day === 0 || day === 6) {
+        if (document.getElementById('bus-next-time')) document.getElementById('bus-next-time').innerText = "OFF";
+        if (document.getElementById('bus-status-text')) document.getElementById('bus-status-text').innerText = "FIM DE SEMANA";
+        if (document.getElementById('bus-status-dot')) document.getElementById('bus-status-dot').className = "w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm";
+        if (document.getElementById('bus-route-desc')) document.getElementById('bus-route-desc').innerHTML = '<i data-lucide="moon" class="w-3 h-3"></i> Bom descanso!';
+        if (document.getElementById('bus-progress-bar')) document.getElementById('bus-progress-bar').style.width = "0%";
+        if (document.getElementById('bus-eta')) document.getElementById('bus-eta').innerText = "Retorna segunda-feira";
+        if (timelineContainer) timelineContainer.innerHTML = '';
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+    const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    let activeBus = null, nextBus = null, timeDiff = Infinity;
+    for (let bus of busSchedule) {
+        const [h1, m1] = bus.start.split(':').map(Number);
+        const [h2, m2] = bus.end.split(':').map(Number);
+        const startSeconds = h1 * 3600 + m1 * 60;
+        const endSeconds = h2 * 3600 + m2 * 60;
+        if (currentTotalSeconds >= startSeconds && currentTotalSeconds < endSeconds) {
+            activeBus = bus; activeBus.startSeconds = startSeconds; activeBus.endSeconds = endSeconds; break;
+        }
+        if (startSeconds > currentTotalSeconds) {
+            const diff = startSeconds - currentTotalSeconds;
+            if (diff < timeDiff) { timeDiff = diff; nextBus = bus; }
+        }
+    }
+    const statusText = document.getElementById('bus-status-text'), timeDisplay = document.getElementById('bus-next-time'), descDisplay = document.getElementById('bus-route-desc'), progressBar = document.getElementById('bus-progress-bar'), etaDisplay = document.getElementById('bus-eta');
+
+    if (!statusText) return;
+
+    if (activeBus) {
+        statusText.innerText = "EM TRÂNSITO";
+        timeDisplay.innerText = activeBus.end;
+        descDisplay.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 text-indigo-500"></i> Destino: ${activeBus.dest}`;
+        const totalDuration = activeBus.endSeconds - activeBus.startSeconds;
+        const elapsed = currentTotalSeconds - activeBus.startSeconds;
+        const percent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+        progressBar.style.width = `${percent}%`;
+        etaDisplay.innerText = `Chega em aprox. ${Math.ceil((activeBus.endSeconds - currentTotalSeconds) / 60)} min`;
+
+        if (timelineContainer) {
+            let html = '<div class="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>';
             if (activeBus.stops) {
-                const upcomingStops = activeBus.stops.filter(s => { 
-                    const [sh, sm] = s.time.split(':').map(Number); 
-                    return (sh * 3600 + sm * 60) >= (currentTotalSeconds - 60); 
-                }).slice(0, 3); 
-                
-                if (upcomingStops.length === 0) html += '<p class="text-xs text-gray-400 pl-8 py-2">Chegando...</p>'; 
-                else upcomingStops.forEach((stop, idx) => { 
-                    const isNext = idx === 0; 
-                    html += `<div class="relative z-10 flex items-center gap-4 mb-3 last:mb-0"><div class="w-2.5 h-2.5 rounded-full ${isNext ? "bg-indigo-600 border-white dark:border-slate-800 scale-125" : "bg-gray-300 dark:bg-gray-600 border-white dark:border-slate-800"} border-2 ml-4 flex-shrink-0 transition-all duration-500 shadow-sm"></div><div class="flex justify-between w-full pr-2"><span class="text-xs ${isNext ? "text-indigo-700 dark:text-indigo-300 font-bold" : "text-gray-500 dark:text-gray-400"}">${stop.loc}</span><span class="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">${stop.time}</span></div></div>`; 
-                }); 
-                timelineContainer.innerHTML = html; 
+                const upcomingStops = activeBus.stops.filter(s => {
+                    const [sh, sm] = s.time.split(':').map(Number);
+                    return (sh * 3600 + sm * 60) >= (currentTotalSeconds - 60);
+                }).slice(0, 3);
+
+                if (upcomingStops.length === 0) html += '<p class="text-xs text-gray-400 pl-8 py-2">Chegando...</p>';
+                else upcomingStops.forEach((stop, idx) => {
+                    const isNext = idx === 0;
+                    html += `<div class="relative z-10 flex items-center gap-4 mb-3 last:mb-0"><div class="w-2.5 h-2.5 rounded-full ${isNext ? "bg-indigo-600 border-white dark:border-slate-800 scale-125" : "bg-gray-300 dark:bg-gray-600 border-white dark:border-slate-800"} border-2 ml-4 flex-shrink-0 transition-all duration-500 shadow-sm"></div><div class="flex justify-between w-full pr-2"><span class="text-xs ${isNext ? "text-indigo-700 dark:text-indigo-300 font-bold" : "text-gray-500 dark:text-gray-400"}">${stop.loc}</span><span class="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">${stop.time}</span></div></div>`;
+                });
+                timelineContainer.innerHTML = html;
             } else {
                 timelineContainer.innerHTML = '';
             }
-        } 
-    } else if (nextBus) { 
-        statusText.innerText = "PRÓXIMA SAÍDA"; 
-        timeDisplay.innerText = nextBus.start; 
-        descDisplay.innerHTML = `<i data-lucide="clock" class="w-3 h-3"></i> Saída da ${nextBus.origin}`; 
-        progressBar.style.width = "0%"; 
-        const hours = Math.floor(timeDiff / 3600); 
-        const minutes = Math.floor((timeDiff % 3600) / 60); 
-        etaDisplay.innerText = `Faltam ${hours > 0 ? hours+'h ' : ''}${minutes}m para sair`; 
-        if(timelineContainer) timelineContainer.innerHTML = `<div class="text-center text-xs text-gray-400 py-2">Itinerário: ${nextBus.route}</div>`; 
-    } else { 
-        statusText.innerText = "ENCERRADO"; 
-        timeDisplay.innerText = "--:--"; 
-        descDisplay.innerText = "Sem mais viagens hoje"; 
-        progressBar.style.width = "0%"; 
-        etaDisplay.innerText = "Volta amanhã às 06:25"; 
-        if(timelineContainer) timelineContainer.innerHTML = ''; 
-    } 
-    if(window.lucide) lucide.createIcons(); 
+        }
+    } else if (nextBus) {
+        statusText.innerText = "PRÓXIMA SAÍDA";
+        timeDisplay.innerText = nextBus.start;
+        descDisplay.innerHTML = `<i data-lucide="clock" class="w-3 h-3"></i> Saída da ${nextBus.origin}`;
+        progressBar.style.width = "0%";
+        const hours = Math.floor(timeDiff / 3600);
+        const minutes = Math.floor((timeDiff % 3600) / 60);
+        etaDisplay.innerText = `Faltam ${hours > 0 ? hours + 'h ' : ''}${minutes}m para sair`;
+        if (timelineContainer) timelineContainer.innerHTML = `<div class="text-center text-xs text-gray-400 py-2">Itinerário: ${nextBus.route}</div>`;
+    } else {
+        statusText.innerText = "ENCERRADO";
+        timeDisplay.innerText = "--:--";
+        descDisplay.innerText = "Sem mais viagens hoje";
+        progressBar.style.width = "0%";
+        etaDisplay.innerText = "Volta amanhã às 06:25";
+        if (timelineContainer) timelineContainer.innerHTML = '';
+    }
+    if (window.lucide) lucide.createIcons();
 }
 
-function renderBusTable() { 
-    const tbody = document.getElementById('bus-table-body'); 
-    if(!tbody) return; 
-    tbody.innerHTML = ''; 
-    busSchedule.forEach(bus => { 
-        const tr = document.createElement('tr'); 
-        tr.className = "border-b border-white/20 dark:border-white/10 hover:bg-white/10 transition"; 
-        tr.innerHTML = `<td class="px-4 py-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${bus.start}</td><td class="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">${bus.end}</td><td class="px-4 py-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wide whitespace-nowrap">${bus.route}</td>`; 
-        tbody.appendChild(tr); 
-    }); 
+function renderBusTable() {
+    const tbody = document.getElementById('bus-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    busSchedule.forEach(bus => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b border-white/20 dark:border-white/10 hover:bg-white/10 transition";
+        tr.innerHTML = `<td class="px-4 py-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${bus.start}</td><td class="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">${bus.end}</td><td class="px-4 py-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wide whitespace-nowrap">${bus.route}</td>`;
+        tbody.appendChild(tr);
+    });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     if (window.renderSchedule) window.renderSchedule();
     if (window.updateNextClassWidget) window.updateNextClassWidget();
-    
+
     setInterval(updateBusWidget, 1000);
-    
+
     setInterval(() => {
         if (window.updateNextClassWidget) window.updateNextClassWidget();
     }, 60000);
-    
+
     updateBusWidget();
     renderBusTable();
-    
+
     setTimeout(() => {
         if (window.setWidgetStyle) window.setWidgetStyle(widgetStyle, false);
     }, 200);
-    
-    if(window.lucide) lucide.createIcons();
-    
+
+    if (window.lucide) lucide.createIcons();
+
     const hash = window.location.hash.replace('#', '') || 'home';
     if (window.navigateTo) window.navigateTo(hash);
 });
