@@ -348,7 +348,8 @@ function initDataSync() {
         if (typeof window.updateNextClassWidget === 'function') window.updateNextClassWidget();
         if (typeof window.renderTasks === 'function') window.renderTasks();
         if (typeof window.renderFinance === 'function') window.renderFinance();
-        if (typeof window.renderNotes === 'function' && !activeNoteId && document.getElementById('view-notas') && !document.getElementById('view-notas').classList.contains('hidden')) {
+        // Renderiza notas em segundo plano se não tiver nota ativa, para garantir que esteja pronto ao trocar de aba
+        if (typeof window.renderNotes === 'function' && !activeNoteId) {
             window.renderNotes();
         }
     });
@@ -383,6 +384,13 @@ function switchView(pageId, pushToHistory = true) {
     if (pageId === 'edit-profile') {
         populateEditProfile();
     }
+
+    // CORREÇÃO: Renderizar componentes ao entrar na aba para garantir que apareçam
+    if (pageId === 'notas') window.renderNotes();
+    if (pageId === 'tarefas') window.renderTasks();
+    if (pageId === 'financeiro') window.renderFinance();
+    if (pageId === 'aulas') window.renderSchedule();
+    if (pageId === 'onibus') window.updateBusWidget();
     
     if (pushToHistory) {
         history.pushState({ page: pageId }, null, `#${pageId}`);
