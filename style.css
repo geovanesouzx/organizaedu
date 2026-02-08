@@ -97,15 +97,110 @@ body {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
 }
 
-/* --- 2. HEADER CORRIGIDO (Área Segura) --- */
+/* --- 1. CONFIGURAÇÃO DAS ÁREAS SEGURAS --- */
+:root {
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+}
+
+/* BASE */
+body {
+    background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 30%, #E0C3FC 60%, #8EC5FC 100%);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+}
+
+.dark body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #312e81 70%, #4c1d95 100%);
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* --- GLASS SYSTEM (Liquid Glass) --- */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+.dark .glass-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.glass-inner {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+}
+
+.dark .glass-inner {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Inputs melhorados */
+.input-glass {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #1e293b;
+    backdrop-filter: blur(10px);
+}
+
+.dark .input-glass {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+}
+
+.input-glass::placeholder {
+    color: rgba(100, 116, 139, 0.7);
+}
+
+.dark .input-glass::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+.input-glass:focus {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+.dark .input-glass:focus {
+    background: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+/* --- 2. HEADER INTELIGENTE (Separado PC vs Android) --- */
 .sticky-header {
     position: sticky;
     top: 0;
     z-index: 40;
 
-    /* CORREÇÃO: "max()" força um espaço mínimo de 4rem no topo, resolvendo a sobreposição */
-    padding-top: max(4rem, calc(var(--safe-top) + 1.5rem)) !important;
-
+    /* 💻 MODO WEB (PC): Compacto e bonito */
+    padding-top: 1.5rem;
     padding-bottom: 1rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -113,15 +208,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     height: auto;
-    min-height: 6rem;
+    min-height: 5rem;
 
     background: transparent;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     flex-shrink: 0;
     transition: all 0.3s ease;
+}
+
+/* 📱 MODO APP ANDROID (Ativado pelo JS) */
+body.is-android .sticky-header {
+    /* Força espaço gigante para sair de trás da câmera */
+    padding-top: max(4.5rem, calc(var(--safe-top) + 2rem)) !important;
+    min-height: 7rem;
 }
 
 /* SIDEBAR (PC) */
@@ -138,19 +239,18 @@ aside.fixed-sidebar {
     overflow: hidden;
 }
 
-/* --- 3. DOCK MOBILE CORRIGIDA (Área Segura) --- */
+/* --- 3. DOCK MOBILE INTELIGENTE --- */
 .glass-nav {
     position: fixed;
-
-    /* CORREÇÃO: "max()" sobe o menu para longe da barra de gestos */
-    bottom: max(2.5rem, calc(var(--safe-bottom) + 1.5rem)) !important;
-
+    z-index: 50;
     left: 1rem;
     right: 1rem;
-    z-index: 50;
 
-    height: auto;
-    min-height: 4rem;
+    /* 💻 MODO WEB (PC) */
+    bottom: 1.5rem;
+    height: 4rem;
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
 
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(20px) saturate(180%);
@@ -160,15 +260,17 @@ aside.fixed-sidebar {
     border-radius: 2rem;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Preenchimento extra */
-    padding-bottom: 0.5rem !important;
-    padding-top: 0.5rem;
-
     display: flex;
     justify-content: space-around;
     align-items: center;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+}
+
+/* 📱 MODO APP ANDROID */
+body.is-android .glass-nav {
+    /* Sobe para fugir da barra de gestos */
+    bottom: max(3rem, calc(var(--safe-bottom) + 1.5rem)) !important;
 }
 
 .glass-nav.hidden-nav {
@@ -247,7 +349,7 @@ aside.fixed-sidebar {
     color: #ef4444;
 }
 
-/* --- 4. MODAL CORRIGIDO (Não cola no topo/fundo) --- */
+/* --- 4. MODAL CORRIGIDO --- */
 .modal-glass {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(25px) saturate(180%);
@@ -324,19 +426,22 @@ aside.fixed-sidebar {
     }
 }
 
-/* --- 5. CORREÇÃO DA BARRA DE DIGITAÇÃO (IA) --- */
+/* --- 5. BARRA DE DIGITAÇÃO INTELIGENTE (IA) --- */
 #chat-input-container {
-    /* Ajustado para 4.5rem (aprox 72px) para subir BEM mais */
-    padding-bottom: max(4.5rem, calc(var(--safe-bottom) + 1.5rem)) !important;
-
-    /* Ajustes visuais */
-    padding-top: 1.5rem !important;
+    /* 💻 MODO WEB (PC) */
+    padding-bottom: 1.5rem;
+    padding-top: 1.5rem;
     z-index: 60;
 
-    /* Gradiente */
     background: linear-gradient(to top,
             rgba(255, 255, 255, 0.95) 40%,
             rgba(255, 255, 255, 0) 100%);
+}
+
+/* 📱 MODO APP ANDROID */
+body.is-android #chat-input-container {
+    /* Sobe 4.5rem para fugir do teclado e gestos */
+    padding-bottom: max(4.5rem, calc(var(--safe-bottom) + 1.5rem)) !important;
 }
 
 .dark #chat-input-container {

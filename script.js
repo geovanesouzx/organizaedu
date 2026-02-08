@@ -337,6 +337,18 @@ window.handleNativeLogin = (idToken) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // 👇 --- CÓDIGO NOVO: DETECTOR AUTOMÁTICO DE VISUAL --- 👇
+    // Verifica se a "Ponte" existe. Se sim, adiciona a classe 'is-android' no corpo do site.
+    if (window.AndroidInterface) {
+        console.log("📱 App Android detectado: Ativando 'Dimensão Aplicativo' (Padding Extra)");
+        document.body.classList.add('is-android');
+    } else {
+        console.log("💻 Navegador/PC detectado: Ativando 'Dimensão Site' (Padrão)");
+        document.body.classList.remove('is-android');
+    }
+    // 👆 --------------------------------------------------- 👆
+
     const btnLogin = document.getElementById('btn-login-google');
 
     if (btnLogin) {
