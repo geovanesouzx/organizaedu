@@ -659,6 +659,7 @@ window.setAIProvider = function (provider) {
 window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!currentUser) return;
 
+    // Se não tiver chat ativo, cria um novo
     if (!activeChatId) {
         await startNewChat();
         await new Promise(r => setTimeout(r, 100));
@@ -670,12 +671,12 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
     if (!textOverride) input.value = '';
 
     if (organizaIA) {
-        // Adiciona mensagem do usuário na tela
+        // 1. Salva a mensagem do usuário no Firebase
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: msgText, role: 'user', type: type, timestamp: Date.now()
         });
 
-        // Atualiza título do chat se for novo
+        // 2. Atualiza o título do chat se for o início da conversa
         const threadRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId);
         if (currentChatHistory.length < 2) {
             await setDoc(threadRef, { title: msgText.substring(0, 30), updatedAt: Date.now() }, { merge: true });
@@ -683,12 +684,13 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
             await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
         }
 
-        // --- OTIMIZAÇÃO PARA MOBILE (CORREÇÃO DO ERRO DE SOBRECARGA) ---
-        // Pega apenas as 5 últimas notas e corta textos gigantes
-        // Isso reduz o peso do envio de 5MB para ~10KB
+        // --- OTIMIZAÇÃO CRÍTICA PARA MOBILE ---
+        // Evita erro de "Sobrecarregada" enviando apenas dados essenciais
+
+        // Pega apenas as 5 últimas notas e corta textos muito longos
         const optimizedNotes = notesData.slice(0, 5).map(n => ({
             title: n.title,
-            content: n.content ? n.content.substring(0, 150) + "..." : "", // Limita caracteres
+            content: n.content ? n.content.substring(0, 150) + "..." : "",
             date: new Date(n.updatedAt).toLocaleDateString()
         }));
 
@@ -697,27 +699,29 @@ window.sendMessage = async function (textOverride = null, type = 'text') {
         const doneTasks = tasksData.filter(t => t.done).slice(0, 3);
         const optimizedTasks = [...pendingTasks, ...doneTasks];
 
+        // Verifica status do ônibus com segurança
         const nextBusInfo = typeof getNextBusForContext === 'function' ? getNextBusForContext() : "Verificar app";
 
+        // Monta o contexto leve
         const userContext = {
             profile: userProfileData,
             schedule: scheduleData,
-            tasks: optimizedTasks, // Versão leve
+            tasks: optimizedTasks, // Versão otimizada
             finance: financeData,
-            notes: optimizedNotes, // Versão leve
+            notes: optimizedNotes, // Versão otimizada
             grades: gradesData,
             busStatus: nextBusInfo,
             currentTime: new Date().toLocaleString('pt-BR'),
             currentBudget: monthlyBudget
         };
 
-        // Mantém histórico curto para não estourar limite
+        // Limita o histórico enviado para a IA (últimas 6 mensagens)
         const limitedHistory = currentChatHistory.slice(-6);
 
-        // Chama a IA
+        // 3. Chama a IA
         const result = await organizaIA.processMessage(msgText, userContext, currentAIProvider, limitedHistory);
 
-        // Salva resposta da IA
+        // 4. Salva a resposta da IA no Firebase
         await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'threads', activeChatId, 'messages'), {
             text: result.text, role: 'ai', type: 'text', timestamp: Date.now() + 100
         });
