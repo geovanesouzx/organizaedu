@@ -1928,3 +1928,84 @@ async function checkPaymentStatus() {
         console.log("Aguardando pagamento...", e);
     }
 }
+
+// ============================================================
+// --- PWA & SISTEMA OFFLINE ---
+// ============================================================
+
+// 1. Gerar Manifesto Dinâmico
+const manifest = {
+    "name": "OrganizaEdu",
+    "short_name": "OrganizaEdu",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "orientation": "portrait",
+    "icons": [
+        { "src": "https://files.catbox.moe/614u86.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "https://files.catbox.moe/614u86.png", "sizes": "512x512", "type": "image/png" }
+    ]
+};
+const stringManifest = JSON.stringify(manifest);
+const blobManifest = new Blob([stringManifest], { type: 'application/json' });
+const manifestURL = URL.createObjectURL(blobManifest);
+const pwaManifestLink = document.querySelector('#pwa-manifest');
+if (pwaManifestLink) {
+    pwaManifestLink.setAttribute('href', manifestURL);
+}
+
+// 2. Registrar Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registrado!'))
+            .catch(err => console.log('SW Falhou:', err));
+    });
+
+    // 3. Botão de Instalar (Prompt)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        const installBtn = document.getElementById('btn-install-pwa');
+        if (installBtn) {
+            installBtn.classList.remove('hidden'); // Mostra o botão
+
+            installBtn.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Usuário aceitou instalar');
+                    }
+                    deferredPrompt = null;
+                    installBtn.classList.add('hidden');
+                });
+            });
+        }
+    });
+
+    // 4. Detecção Online/Offline
+    function updateNetworkStatus() {
+        const toast = document.getElementById('network-toast');
+        if (!toast) return;
+
+        if (navigator.onLine) {
+            toast.classList.remove('translate-y-0');
+            toast.classList.add('-translate-y-20'); // Esconde
+
+            // Sincroniza dados ao voltar online
+            if (typeof initDataSync === 'function' && currentUser) {
+                // Pequeno delay para garantir conexão estável
+                setTimeout(() => initDataSync(), 1000);
+            }
+        } else {
+            toast.classList.remove('-translate-y-20');
+            toast.classList.add('translate-y-0'); // Mostra
+        }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+}

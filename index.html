@@ -7,6 +7,10 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>OrganizaEdu - Liquid Glass</title>
 
+    <link rel="manifest" id="pwa-manifest">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="https://files.catbox.moe/614u86.png">
     <link rel="apple-touch-icon" href="https://files.catbox.moe/614u86.png">
 
@@ -71,7 +75,16 @@
 <body
     class="text-slate-800 dark:text-slate-100 transition-colors duration-300 selection:bg-indigo-500 selection:text-white font-sans overflow-hidden bg-slate-50 dark:bg-slate-900">
 
-    <!-- TELA DE CARREGAMENTO -->
+    <div id="network-toast"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-[110] px-4 py-2 rounded-full glass-inner bg-red-500/80 text-white text-xs font-bold shadow-lg transition-transform duration-300 -translate-y-20 flex items-center gap-2 backdrop-blur-md border border-white/20">
+        <i data-lucide="wifi-off" class="w-4 h-4"></i> <span>Você está offline</span>
+    </div>
+
+    <button id="btn-install-pwa"
+        class="hidden fixed bottom-20 right-4 z-[90] bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-xl shadow-indigo-500/40 animate-blob transition transform hover:scale-110 active:scale-95">
+        <i data-lucide="download" class="w-6 h-6"></i>
+    </button>
+
     <div id="loading-screen"
         class="fixed inset-0 z-[100] bg-white dark:bg-[#0f172a] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="relative w-32 h-32 mb-6">
