@@ -2060,3 +2060,94 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
 }
+
+// --- INTEGRAÇÃO COM WIDGETS ANDROID ---
+function sendDataToAndroidWidget() {
+    // Só roda se estiver dentro do App Android
+    if (window.AndroidInterface) {
+
+        // --- 1. DADOS DO CIRCULAR ---
+        // Pega direto da tela para garantir que o que você vê é o que vai pro widget
+        const busTime = document.getElementById('bus-next-time')?.innerText || "--:--";
+        const busStatus = document.getElementById('bus-status-text')?.innerText || "AGUARDANDO";
+
+        // Pega descrição limpa (remove ícones)
+        let busDesc = document.getElementById('bus-route-desc')?.innerText || "";
+        busDesc = busDesc.replace('map-pin', '').trim(); // Remove texto do icone se tiver
+
+        const busEta = document.getElementById('bus-eta')?.innerText || "";
+
+        // Pega porcentagem da barra
+        const progressBar = document.getElementById('bus-progress-bar');
+        let progressVal = 0;
+        if (progressBar && progressBar.style.width) {
+            progressVal = parseInt(progressBar.style.width);
+        }
+
+        // --- 2. DADOS DA AULA ---
+        let className = "Sem aulas";
+        let classInfo = "Bom descanso!";
+
+        // Lógica para achar a aula atual/próxima
+        if (typeof scheduleData !== 'undefined' && scheduleData.length > 0) {
+            const now = new Date();
+            const daysArr = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+            const currentDay = daysArr[now.getDay()];
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // Filtra aulas de hoje
+            const todayClasses = scheduleData.filter(c => c.day === currentDay)
+                .sort((a, b) => parseInt(a.start.replace(':', '')) - parseInt(b.start.replace(':', '')));
+
+            // Tenta achar uma que ainda não acabou
+            const next = todayClasses.find(c => {
+                const [h, m] = c.start.split(':').map(Number);
+                // Assume 1h de duração se não tiver fim definido
+                let endMins = (h * 60 + m) + 60;
+                if (c.end) {
+                    const [he, me] = c.end.split(':').map(Number);
+                    endMins = he * 60 + me;
+                }
+                return endMins > currentMinutes;
+            });
+
+            if (next) {
+                className = next.name;
+                classInfo = `${next.start} • ${next.room}`;
+            } else if (todayClasses.length > 0) {
+                className = "Aulas encerradas";
+                classInfo = "Até a próxima!";
+            }
+        }
+
+        // --- 3. EMPACOTAR E ENVIAR ---
+        const busJson = JSON.stringify({
+            time: busTime,
+            status: busStatus,
+            desc: busDesc,
+            eta: busEta,
+            progress: progressVal
+        });
+
+        const classJson = JSON.stringify({
+            name: className,
+            info: classInfo
+        });
+
+        // Chama o Android
+        window.AndroidInterface.updateWidgets(busJson, classJson);
+        console.log("📡 Dados enviados para Widgets Android");
+    }
+}
+
+// --- GATILHOS DE ATUALIZAÇÃO ---
+// Atualiza a cada 30 segundos
+setInterval(() => {
+    if (window.updateBusWidget) window.updateBusWidget(); // Atualiza a tela primeiro
+    setTimeout(sendDataToAndroidWidget, 500); // Manda pro Android logo depois
+}, 30000);
+
+// Atualiza assim que abre o app
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(sendDataToAndroidWidget, 2000); // Espera carregar tudo
+});
